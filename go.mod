@@ -6,7 +6,6 @@ require (
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
 	github.com/joho/godotenv v1.5.1
 	github.com/nbd-wtf/go-nostr v0.50.0
-	github.com/twpayne/go-meteomatics v1.0.0
 )
 
 require (
