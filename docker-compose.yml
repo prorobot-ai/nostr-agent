@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nostr-agent
+    restart: unless-stopped  # 🔄 Automatically restarts the container if it crashes
+    env_file:
+      - .env
+    command: ["basic_bot"]  # Run the command
+    volumes:
+      - ./logs:/app/logs  # Optional: Persist logs outside the container

@@ -1,0 +1,10 @@
+.DS_Store
+.env
+.gitignore
+Dockerfile
+docker-compose.yml
+go.mod
+go.sum
+LICENSE.md
+tree.txt
+README.md
