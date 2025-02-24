@@ -4,7 +4,7 @@ A scalable, extensible bot system built in **Go (Golang)** for handling direct m
 
 ### 🌍 Features
 
-- ✅ **Direct Message Bot** (`bot`) – Handles user queries and support via encrypted direct messages.
+- ✅ **Direct Message Bot** (`basic_bot`) – Handles user queries and support via encrypted direct messages.
 - ✅ **Extensible Plugin System** – Supports global and handler-specific plugins (e.g., logging, notifications).
 - ✅ **Dockerized Deployment** – Easily deploy with Docker, including auto-restart capabilities.
 - ✅ **Auto-Resilience** – Automatically restarts if the bot crashes or encounters errors.
@@ -26,9 +26,9 @@ A scalable, extensible bot system built in **Go (Golang)** for handling direct m
 Create a `.env` file in the root directory with the following values:
 
 ```env
-BOT_1_RELAY_URL=wss://relay.example.com
-BOT_1_NSEC=your-secret-key
-BOT_1_CHANNEL_ID=your-channel-id
+DISPATCH_RELAY_URL=wss://relay.example.com
+DISPATCH_NSEC=your-secret-key
+DISPATCH_CHANNEL_ID=your-channel-id
 ```
 
 ###  🔨 Building and Running
@@ -63,46 +63,12 @@ Step 4: Stop the bot:
 ```
 docker-compose down
 ```
-#### 🔌 Plugins System
-
-The bot supports two types of plugins:
-1.	Global Plugins – Triggered on every event.
-2.	Handler-Specific Plugins – Triggered on specific message events.
-
-#### 📄 Example Plugin Usage:
-
-Logging Plugin (Global):
-```
-loggingPlugin := &plugins.LoggingPlugin{}
-```
-
-Channel Notifier Plugin (Handler-Specific):
-
-```
-channelNotifier := &plugins.ChannelNotifierPlugin{
-	ChannelID: "channel-123",
-}
-```
-
-Attach plugins when creating a bot:
-
-```
-supportHandler := &handlers.SupportHandler{
-	Plugins: []bot.HandlerPlugin{channelNotifier},
-}
-
-supportBot := bot.NewBasicBot(
-	relayURL,
-	nsec,
-	supportHandler,
-	[]bot.BotPlugin{loggingPlugin},
-)
-```
 #### 🔥 Commands
 
 ```
 Command	Description
-agent basic_bot	- Starts the Bot
+agent basic_bot	- Starts support bot
+agent group_bot - Starts weather bot
 ```
 
 ```

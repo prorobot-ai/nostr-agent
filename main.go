@@ -3,7 +3,9 @@ package main
 import (
 	"agent/bot"
 	"agent/bot/handlers"
-	"agent/bot/plugins"
+	"agent/bot/listeners"
+	"agent/bot/publishers"
+	"agent/core"
 	"flag"
 	"fmt"
 	"log"
@@ -16,7 +18,8 @@ import (
 const USAGE = `agent
 
 Usage:
-  agent basic_bot
+	agent basic_bot
+	agent group_bot
 
 Specify <content> as '-' to make the publish or message command read it
 from stdin.
@@ -36,7 +39,9 @@ func main() {
 	// Command Execution
 	switch {
 	case opts["basic_bot"].(bool):
-		startBot(relayURL, nsec, channelID)
+		startBasicBot(relayURL, nsec, channelID)
+	case opts["group_bot"].(bool):
+		startGroupBot(relayURL, nsec, channelID)
 	default:
 		fmt.Println("❗ Invalid command. Use '--help' for usage instructions.")
 	}
@@ -56,49 +61,120 @@ func loadEnvVariables() {
 }
 
 func getEnvVariables() (string, string, string) {
-	relayURL := os.Getenv("BOT_1_RELAY_URL")
-	nsec := os.Getenv("BOT_1_NSEC")
-	channelID := os.Getenv("BOT_1_CHANNEL_ID")
+	relayURL := os.Getenv("DISPATCH_RELAY_URL")
+	nsec := os.Getenv("DISPATCH_NSEC")
+	channelID := os.Getenv("DISPATCH_CHANNEL_ID")
 
 	if nsec == "" || channelID == "" || relayURL == "" {
-		log.Fatal("❌ Missing required environment variables: BOT_1_RELAY_URL, BOT_1_NSEC, BOT_1_CHANNEL_ID")
+		log.Fatal("❌ Missing required environment variables: DISPATCH_RELAY_URL, DISPATCH_NSEC, DISPATCH_CHANNEL_ID")
 	}
 
 	return relayURL, nsec, channelID
 }
 
-// ✅ Command Execution Functions
-func startBot(relayURL string, nsec string, channelID string) {
+// ✅ Command Execution Function: Starts a basic DM bot
+func startBasicBot(relayURL, nsec, channelID string) {
 	log.Println("🤖 Starting Direct Message Bot...")
 
-	loggingPlugin := &plugins.LoggingPlugin{}
-
-	// Create a channel notifier plugin
-	channelNotifier := &plugins.ChannelNotifierPlugin{
-		RelayURL:  relayURL,
-		ChannelID: channelID,
+	// 🔄 Initialize EventBus for internal communication
+	eventBus := bot.NewEventBus()
+	if eventBus == nil {
+		log.Fatal("❌ Failed to initialize EventBus")
+	} else {
+		log.Println("✅ EventBus initialized successfully")
 	}
 
-	// Create a support handler
+	// 📥 Set up the support handler and subscribe to events
 	supportHandler := &handlers.SupportHandler{
-		Plugins: []bot.HandlerPlugin{channelNotifier},
+		EventBus: eventBus,
 	}
+	supportHandler.Subscribe()
 
-	// Initialize the support bot with the notifier plugin
-	supportBot := bot.NewBasicBot(
+	// 🎧 Initialize the direct message listener
+	listener := &listeners.DMListener{}
+
+	// 📤 Initialize the DM publisher for sending outgoing messages
+	publisher := &publishers.DMPublisher{}
+
+	// 🤖 Create the bot instance
+	supportBot := bot.NewBaseBot(
 		relayURL,
 		nsec,
-		supportHandler,
-		[]bot.BotPlugin{loggingPlugin},
+		listener,  // Listens for incoming events
+		publisher, // Publishes outgoing messages
+		eventBus,  // EventBus for internal communication
 	)
 
-	// Initialize the BotManager to handle concurrent bots if needed
+	// 🔗 Subscribe to DM responses and broadcast them using the publisher
+	eventBus.Subscribe(core.DMResponseEvent, func(message *core.OutgoingMessage) {
+		if err := publisher.Broadcast(supportBot, message); err != nil {
+			log.Printf("❌ Failed to broadcast message: %v", err)
+		}
+	})
+
+	// 🚦 Initialize the BotManager for managing concurrent bots
 	manager := bot.BotManager{}
 	manager.AddBot(supportBot)
 
-	// Start all bots
+	// 🚀 Start all bots concurrently
 	manager.StartAll()
 
-	// Block main thread to keep the bots running
+	// 🔒 Keep the main thread running to prevent exit
+	select {}
+}
+
+// ✅ Command Execution Function: Starts a basic Group bot
+func startGroupBot(relayURL, nsec, channelID string) {
+	log.Println("🤖 Starting Group Bot...")
+
+	// 🔄 Initialize EventBus for internal communication
+	eventBus := bot.NewEventBus()
+	if eventBus == nil {
+		log.Fatal("❌ Failed to initialize EventBus")
+	} else {
+		log.Println("✅ EventBus initialized successfully")
+	}
+
+	// 📥 Set up the support handler and subscribe to events
+	groupHandler := &handlers.GroupHandler{
+		ChannelID: channelID,
+		EventBus:  eventBus,
+	}
+	groupHandler.Subscribe()
+
+	// 🎧 Initialize the group listener
+	listener := &listeners.GroupListener{
+		ChannelID: channelID,
+	}
+
+	// 📤 Initialize the Group publisher for sending outgoing messages
+	publisher := &publishers.GroupPublisher{
+		ChannelID: channelID,
+	}
+
+	// 🤖 Create the bot instance
+	groupBot := bot.NewBaseBot(
+		relayURL,
+		nsec,
+		listener,  // Listens for incoming events
+		publisher, // Publishes outgoing messages
+		eventBus,  // EventBus for internal communication
+	)
+
+	// 🔗 Subscribe to Group responses and broadcast them using the publisher
+	eventBus.Subscribe(core.GroupResponseEvent, func(message *core.OutgoingMessage) {
+		if err := publisher.Broadcast(groupBot, message); err != nil {
+			log.Printf("❌ Failed to broadcast message: %v", err)
+		}
+	})
+
+	// 🚦 Initialize the BotManager for managing concurrent bots
+	manager := bot.BotManager{}
+	manager.AddBot(groupBot)
+
+	// 🚀 Start all bots concurrently
+	manager.StartAll()
+
+	// 🔒 Keep the main thread running to prevent exit
 	select {}
 }
