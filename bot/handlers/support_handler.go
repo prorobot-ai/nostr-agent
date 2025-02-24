@@ -26,7 +26,7 @@ func (h *SupportHandler) respondToMessage(message *core.OutgoingMessage) {
 		}
 		h.EventBus.Publish(core.DMResponseEvent, reply)
 
-	case strings.Contains(message.Content, "I'm online."):
+	case strings.Contains(message.Content, "I’m online."):
 		reply := &core.OutgoingMessage{
 			ReceiverPubKey: message.ReceiverPubKey,
 			Content:        "👋 Welcome to Dispatch! Let us know if you need any assistance.",

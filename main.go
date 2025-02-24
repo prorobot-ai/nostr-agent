@@ -18,8 +18,9 @@ import (
 const USAGE = `agent
 
 Usage:
-	agent basic_bot
-	agent group_bot
+	agent support_bot
+	agent weather_bot
+	agent welcome_bot
 
 Specify <content> as '-' to make the publish or message command read it
 from stdin.
@@ -38,10 +39,12 @@ func main() {
 
 	// Command Execution
 	switch {
-	case opts["basic_bot"].(bool):
-		startBasicBot(relayURL, nsec, channelID)
-	case opts["group_bot"].(bool):
-		startGroupBot(relayURL, nsec, channelID)
+	case opts["support_bot"].(bool):
+		startSupportBot(relayURL, nsec, channelID)
+	case opts["weather_bot"].(bool):
+		startWeatherBot(relayURL, nsec, channelID)
+	case opts["welcome_bot"].(bool):
+		startWelcomeBot(relayURL, nsec, channelID)
 	default:
 		fmt.Println("❗ Invalid command. Use '--help' for usage instructions.")
 	}
@@ -73,7 +76,7 @@ func getEnvVariables() (string, string, string) {
 }
 
 // ✅ Command Execution Function: Starts a basic DM bot
-func startBasicBot(relayURL, nsec, channelID string) {
+func startSupportBot(relayURL, nsec, channelID string) {
 	log.Println("🤖 Starting Direct Message Bot...")
 
 	// 🔄 Initialize EventBus for internal communication
@@ -124,7 +127,7 @@ func startBasicBot(relayURL, nsec, channelID string) {
 }
 
 // ✅ Command Execution Function: Starts a basic Group bot
-func startGroupBot(relayURL, nsec, channelID string) {
+func startWeatherBot(relayURL, nsec, channelID string) {
 	log.Println("🤖 Starting Group Bot...")
 
 	// 🔄 Initialize EventBus for internal communication
@@ -162,6 +165,49 @@ func startGroupBot(relayURL, nsec, channelID string) {
 	)
 
 	// 🔗 Subscribe to Group responses and broadcast them using the publisher
+	eventBus.Subscribe(core.GroupResponseEvent, func(message *core.OutgoingMessage) {
+		if err := publisher.Broadcast(groupBot, message); err != nil {
+			log.Printf("❌ Failed to broadcast message: %v", err)
+		}
+	})
+
+	// 🚦 Initialize the BotManager for managing concurrent bots
+	manager := bot.BotManager{}
+	manager.AddBot(groupBot)
+
+	// 🚀 Start all bots concurrently
+	manager.StartAll()
+
+	// 🔒 Keep the main thread running to prevent exit
+	select {}
+}
+
+// ✅ Command Execution Function: Starts a basic Group bot
+func startWelcomeBot(relayURL, nsec, channelID string) {
+	log.Println("🤖 Starting Group Bot...")
+
+	eventBus := bot.NewEventBus()
+
+	welcomeHandler := &handlers.WelcomeHandler{
+		ChannelID: channelID,
+		EventBus:  eventBus,
+	}
+	welcomeHandler.Subscribe()
+
+	listener := &listeners.DMListener{}
+
+	publisher := &publishers.GroupPublisher{
+		ChannelID: channelID,
+	}
+
+	groupBot := bot.NewBaseBot(
+		relayURL,
+		nsec,
+		listener,  // Listens for incoming events
+		publisher, // Publishes outgoing messages
+		eventBus,  // EventBus for internal communication
+	)
+
 	eventBus.Subscribe(core.GroupResponseEvent, func(message *core.OutgoingMessage) {
 		if err := publisher.Broadcast(groupBot, message); err != nil {
 			log.Printf("❌ Failed to broadcast message: %v", err)

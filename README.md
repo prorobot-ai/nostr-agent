@@ -67,8 +67,9 @@ docker-compose down
 
 ```
 Command	Description
-agent basic_bot	- Starts support bot
-agent group_bot - Starts weather bot
+agent support_bot - Starts support bot
+agent weather_bot - Starts weather bot
+agent welcome_bot - Starts welcome bot
 ```
 
 ```

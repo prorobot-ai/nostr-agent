@@ -16,10 +16,10 @@ type GroupHandler struct {
 
 func (h *GroupHandler) Subscribe() {
 	log.Println("✅ Subscribed")
-	h.EventBus.Subscribe(core.GroupMessageEvent, h.respondToMessage)
+	h.EventBus.Subscribe(core.GroupMessageEvent, h.weatherHandler)
 }
 
-func (h *GroupHandler) respondToMessage(message *core.OutgoingMessage) {
+func (h *GroupHandler) weatherHandler(message *core.OutgoingMessage) {
 	switch {
 	case strings.Contains(message.Content, "!weather"):
 		weatherReport := weather.GetReport()

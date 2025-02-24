@@ -5,22 +5,28 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug basic_bot",
+            "name": "Debug support_bot",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}",
-            "args": ["basic_bot"]
-
+            "args": ["support_bot"]
         },
         {
-            "name": "Debug group_bot",
+            "name": "Debug weather_bot",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}",
-            "args": ["group_bot"]
-
+            "args": ["weather_bot"]
+        },
+        {
+            "name": "Debug welcome_bot",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceRoot}",
+            "args": ["welcome_bot"]
         }
     ]
 }
