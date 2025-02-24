@@ -21,7 +21,7 @@ func (h *WelcomeHandler) Subscribe() {
 
 func (h *WelcomeHandler) welcomeHandler(message *core.OutgoingMessage) {
 	switch {
-	case strings.Contains(message.Content, "I’m online."):
+	case strings.Contains(message.Content, "I'm online."):
 		reply := &core.OutgoingMessage{
 			Content:   h.createMessage(message.ReceiverPubKey),
 			ChannelID: h.ChannelID,
