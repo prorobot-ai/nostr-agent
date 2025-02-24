@@ -4,7 +4,7 @@ A scalable, extensible bot system built in **Go (Golang)** for handling direct m
 
 ### 🌍 Features
 
-- ✅ **Direct Message Bot** (`basic_bot`) – Handles user queries and support via encrypted direct messages.
+- ✅ **Direct Message Bot** (`support_bot`) – Handles user queries and support via encrypted direct messages.
 - ✅ **Extensible Plugin System** – Supports global and handler-specific plugins (e.g., logging, notifications).
 - ✅ **Dockerized Deployment** – Easily deploy with Docker, including auto-restart capabilities.
 - ✅ **Auto-Resilience** – Automatically restarts if the bot crashes or encounters errors.
@@ -42,7 +42,7 @@ go mod download
 
 Run the bot
 ```
-go run main.go basic_bot
+go run main.go welcome_bot
 ```
 
 #### 🐳 2. Running with Docker
@@ -75,16 +75,6 @@ agent welcome_bot - Starts welcome bot
 ```
 Generate project tree
 tree --prune -I "$(paste -sd'|' .treeignore)" > tree.txt
-```
-#### 🔍 Monitoring and Logs
-
-Monitor agent logs:
-```
-docker logs -f nostr-agent
-```
-Restart agent manually:
-```
-docker-compose restart nostr-agent
 ```
 
 #### 🤝 Contributing

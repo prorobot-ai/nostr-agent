@@ -1,14 +1,38 @@
 version: "3.8"
 
 services:
-  agent:
+  support_bot:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: nostr-agent
-    restart: unless-stopped  # 🔄 Automatically restarts the container if it crashes
+    container_name: support-bot
+    restart: unless-stopped
     env_file:
       - .env
-    command: ["basic_bot"]  # Run the command
+    command: ["support_bot"]
     volumes:
-      - ./logs:/app/logs  # Optional: Persist logs outside the container
+      - ./logs/bot:/app/logs
+
+  weather_bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: weather-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ["weather_bot"]
+    volumes:
+      - ./logs/bot:/app/logs
+
+  welcome_bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: welcome-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ["welcome_bot"]
+    volumes:
+      - ./logs/bot:/app/logs
