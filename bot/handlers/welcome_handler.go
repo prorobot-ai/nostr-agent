@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/nbd-wtf/go-nostr/nip19"
 )
 
 type WelcomeHandler struct {
@@ -23,8 +25,9 @@ func (h *WelcomeHandler) Subscribe(eventBus *bot.EventBus) {
 func (h *WelcomeHandler) HandleMessage(message *core.OutgoingMessage) {
 	switch {
 	case strings.Contains(message.Content, "I'm online."):
+		npub, _ := nip19.EncodePublicKey(message.ReceiverPubKey)
 		reply := &core.OutgoingMessage{
-			Content:   h.createMessage(message.ReceiverPubKey),
+			Content:   h.createMessage(npub),
 			ChannelID: h.ChannelID,
 		}
 		h.EventBus.Publish(core.GroupResponseEvent, reply)
