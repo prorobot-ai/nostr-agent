@@ -1,24 +1,37 @@
 package bot
 
 type BotManager struct {
-	Bots []Bot
+	Bots         []Bot
+	currentIndex int
 }
 
-// AddBot adds a bot to the manager
-func (m *BotManager) AddBot(bot Bot) {
-	m.Bots = append(m.Bots, bot)
+func (m *BotManager) AddBot(botInstance Bot) {
+	m.Bots = append(m.Bots, botInstance)
 }
 
-// StartAll starts all bots concurrently
+// 🔄 Get the next bot mention in round-robin fashion
+func (m *BotManager) GetNextBotMention() string {
+	if len(m.Bots) == 0 {
+		return ""
+	}
+	nextIndex := (m.currentIndex + 1) % len(m.Bots)
+	nextBot := m.Bots[nextIndex]
+	m.currentIndex = nextIndex
+	return nextBot.GetPublicKey()
+}
+
+func (m *BotManager) GetPeers(exclude string) []string {
+	var peers []string
+	for _, b := range m.Bots {
+		if b.GetPublicKey() != exclude { // Avoid adding itself
+			peers = append(peers, b.GetPublicKey())
+		}
+	}
+	return peers
+}
+
 func (m *BotManager) StartAll() {
 	for _, bot := range m.Bots {
 		go bot.Start()
-	}
-}
-
-// StopAll stops all bots
-func (m *BotManager) StopAll() {
-	for _, bot := range m.Bots {
-		bot.Stop()
 	}
 }

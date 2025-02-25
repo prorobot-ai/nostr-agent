@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}",
-            "args": ["support_bot"]
+            "args": ["--config=configs/support_bot.yaml"]
         },
         {
             "name": "Debug weather_bot",
@@ -18,7 +18,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}",
-            "args": ["weather_bot"]
+            "args": ["--config=configs/weather_bot.yaml"]
         },
         {
             "name": "Debug welcome_bot",
@@ -26,7 +26,15 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}",
-            "args": ["welcome_bot"]
+            "args": ["--config=configs/welcome_bot.yaml"]
+        },
+        {
+            "name": "Debug session",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceRoot}",
+            "args": ["--config=configs/session.yaml"]
         }
     ]
 }

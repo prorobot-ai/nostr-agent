@@ -65,8 +65,7 @@ func (listener *DMListener) StartListening(b *bot.BaseBot) {
 // ProcessEvent handles incoming direct message events
 func (listener *DMListener) ProcessEvent(b bot.Bot, event *nostr.Event) {
 	// 🔑 Decrypt the incoming message
-	_, sk, _ := nip19.Decode(b.GetSecretKey())
-	shared, _ := nip04.ComputeSharedSecret(event.PubKey, sk.(string))
+	shared, _ := nip04.ComputeSharedSecret(event.PubKey, b.GetSecretKey())
 	npub, _ := nip19.EncodePublicKey(event.PubKey)
 
 	plaintext, err := nip04.Decrypt(event.Content, shared)
@@ -88,8 +87,8 @@ func (listener *DMListener) ProcessEvent(b bot.Bot, event *nostr.Event) {
 	// 📩 Pass the event to EventBus
 	if baseBot, ok := b.(*bot.BaseBot); ok && baseBot.EventBus != nil {
 		baseBot.EventBus.Publish(core.DMMessageEvent, &core.OutgoingMessage{
-			ReceiverPubKey: event.PubKey,
-			Content:        message.Content,
+			ReceiverPublicKey: event.PubKey,
+			Content:           message.Content,
 		})
 	}
 }

@@ -22,21 +22,21 @@ func (h *SupportHandler) HandleMessage(message *core.OutgoingMessage) {
 	switch {
 	case strings.Contains(message.Content, "!ping"):
 		reply := &core.OutgoingMessage{
-			ReceiverPubKey: message.ReceiverPubKey,
-			Content:        "🏓 Pong! I'm alive.",
+			ReceiverPublicKey: message.ReceiverPublicKey,
+			Content:           "🏓 Pong! I'm alive.",
 		}
 		h.EventBus.Publish(core.DMResponseEvent, reply)
 
 	case strings.Contains(message.Content, "I'm online."):
 		reply := &core.OutgoingMessage{
-			ReceiverPubKey: message.ReceiverPubKey,
-			Content:        "👋 Welcome to Dispatch! Let us know if you need any assistance.",
+			ReceiverPublicKey: message.ReceiverPublicKey,
+			Content:           "👋 Welcome to Dispatch! Let us know if you need any assistance.",
 		}
 		h.EventBus.Publish(core.DMResponseEvent, reply)
 
 	case strings.Contains(message.Content, "Hi, I would like to report "):
 		reply := &core.OutgoingMessage{
-			ReceiverPubKey: message.ReceiverPubKey,
+			ReceiverPublicKey: message.ReceiverPublicKey,
 			Content: fmt.Sprintf(
 				"Could you elaborate on the problem you're encountering with %s? Additional details would greatly assist in resolving your issue. In the meanwhile, feel free to mute the user if that's necessary.",
 				h.ExtractUsername(message.Content),

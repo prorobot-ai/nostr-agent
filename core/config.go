@@ -9,19 +9,27 @@ import (
 
 // BotConfig defines the structure for each bot
 type BotConfig struct {
-	Name      string `yaml:"name"`
-	RelayURL  string `yaml:"relay_url"`
-	Nsec      string `yaml:"nsec"`
-	ChannelID string `yaml:"channel_id"`
-	Listener  string `yaml:"listener"`
-	Publisher string `yaml:"publisher"`
-	Handler   string `yaml:"handler"`
-	EventType string `yaml:"event_type"`
+	Name      string        `yaml:"name"`
+	RelayURL  string        `yaml:"relay_url"`
+	Nsec      string        `yaml:"nsec"`
+	ChannelID string        `yaml:"channel_id"`
+	Listener  string        `yaml:"listener"`
+	Publisher string        `yaml:"publisher"`
+	Handler   string        `yaml:"handler"`
+	EventType string        `yaml:"event_type"`
+	Chatter   ChatterConfig `yaml:"chatter"`
 }
 
 // BotConfigs is a wrapper to handle multiple bots
 type BotConfigs struct {
 	Bots []BotConfig `yaml:"bots"`
+}
+
+type ChatterConfig struct {
+	Leader        bool `yaml:"leader"`
+	MaxExchanges  int  `yaml:"max_exchanges"`
+	InitialDelay  int  `yaml:"initial_delay"`
+	ResponseDelay int  `yaml:"response_delay"`
 }
 
 // LoadBotConfigs loads the bot configurations from a YAML file

@@ -29,12 +29,11 @@ func NewBaseBot(relayURL, nsec string, listener EventListener, publisher Publish
 
 	_, sk, _ := nip19.Decode(nsec)
 	pk, _ := nostr.GetPublicKey(sk.(string))
-	npub, _ := nip19.EncodePublicKey(pk)
 
 	return &BaseBot{
 		RelayURL:         relayURL,
-		SecretKey:        nsec,
-		PublicKey:        npub,
+		SecretKey:        sk.(string),
+		PublicKey:        pk,
 		Context:          ctx,
 		CancelFunc:       cancel,
 		IsActiveListener: false,

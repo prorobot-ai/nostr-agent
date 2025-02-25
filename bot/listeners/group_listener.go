@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/nbd-wtf/go-nostr"
+	"github.com/nbd-wtf/go-nostr/nip19"
 )
 
 // GroupListener handles group channel events
@@ -73,12 +74,16 @@ func (listener *GroupListener) ProcessEvent(b bot.Bot, event *nostr.Event) {
 	// Send event to EventBus for inter-bot communication
 	if baseBot, ok := b.(*bot.BaseBot); ok && baseBot.EventBus != nil {
 		baseBot.EventBus.Publish(core.GroupMessageEvent, &core.OutgoingMessage{
-			ChannelID: listener.ChannelID,
-			Content:   message.Content,
+			ChannelID:         listener.ChannelID,
+			ReceiverPublicKey: b.GetPublicKey(),
+			SenderPublicKey:   event.PubKey,
+			Content:           message.Content,
 		})
 	}
 
-	log.Printf("💬 [Group %s]: %s", listener.ChannelID, message.Content)
+	npub, _ := nip19.EncodePublicKey(b.GetPublicKey())
+	ID := npub[len(npub)-4:]
+	log.Printf("🎧 [Group] [%s] [%s]: %s ", ID, listener.ChannelID, message.Content)
 }
 
 func (listener *GroupListener) Filters(b bot.Bot) []nostr.Filter {

@@ -25,7 +25,7 @@ func (h *WelcomeHandler) Subscribe(eventBus *bot.EventBus) {
 func (h *WelcomeHandler) HandleMessage(message *core.OutgoingMessage) {
 	switch {
 	case strings.Contains(message.Content, "I'm online."):
-		npub, _ := nip19.EncodePublicKey(message.ReceiverPubKey)
+		npub, _ := nip19.EncodePublicKey(message.ReceiverPublicKey)
 		reply := &core.OutgoingMessage{
 			Content:   h.createMessage(npub),
 			ChannelID: h.ChannelID,
@@ -34,9 +34,9 @@ func (h *WelcomeHandler) HandleMessage(message *core.OutgoingMessage) {
 	}
 }
 
-func (h *WelcomeHandler) createMessage(npub string) string {
+func (h *WelcomeHandler) createMessage(content string) string {
 	message := core.ContentStructure{
-		Content: npub,
+		Content: content,
 		Kind:    "subscriber",
 	}
 

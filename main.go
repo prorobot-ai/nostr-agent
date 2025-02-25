@@ -59,7 +59,6 @@ func startDynamicBot(cfg core.BotConfig, manager *bot.BotManager) {
 
 	listener := resolveListener(cfg.Listener, cfg.ChannelID)
 	publisher := resolvePublisher(cfg.Publisher, cfg.ChannelID)
-	handler := resolveHandler(cfg.Handler, cfg.ChannelID)
 
 	// Initialize the bot
 	botInstance := bot.NewBaseBot(
@@ -68,6 +67,14 @@ func startDynamicBot(cfg core.BotConfig, manager *bot.BotManager) {
 		listener,
 		publisher,
 		eventBus,
+	)
+
+	handler := resolveHandler(
+		cfg.Handler,
+		cfg.ChannelID,
+		cfg.Chatter,
+		manager,
+		botInstance,
 	)
 
 	// Subscribe to relevant events
@@ -110,14 +117,19 @@ func resolvePublisher(publisherType, channelID string) bot.Publisher {
 	}
 }
 
-func resolveHandler(handlerType, channelID string) bot.EventHandler {
+func resolveHandler(handlerType, channelID string, chatter core.ChatterConfig, manager *bot.BotManager, botInstance *bot.BaseBot) bot.EventHandler {
 	switch handlerType {
+	case "ExchangeHandler":
+		return &handlers.ExchangeHandler{
+			ChannelID: channelID,
+			Chatter:   chatter,
+			Manager:   manager,
+			Bot:       botInstance,
+		}
 	case "SupportHandler":
 		return &handlers.SupportHandler{}
 	case "GroupHandler":
 		return &handlers.GroupHandler{ChannelID: channelID}
-	case "ExchangeHandler":
-		return &handlers.ExchangeHandler{ChannelID: channelID}
 	case "WelcomeHandler":
 		return &handlers.WelcomeHandler{ChannelID: channelID}
 	default:

@@ -27,13 +27,14 @@ func (publisher *GroupPublisher) Broadcast(b *bot.BaseBot, message *core.Outgoin
 		},
 	}
 
-	_, sk, _ := nip19.Decode(b.SecretKey)
-	event.Sign(sk.(string))
+	event.Sign(b.SecretKey)
 
 	if err := b.Relay.Publish(b.Context, event); err != nil {
 		log.Printf("❌ Failed to publish group message: %v", err)
 	} else {
-		log.Printf("📢 Group message sent to channel %s", publisher.ChannelID)
+		npub, _ := nip19.EncodePublicKey(b.PublicKey)
+		ID := npub[len(npub)-4:]
+		log.Printf("📢 Group message sent to channel %s %s", publisher.ChannelID, ID)
 	}
 
 	log.Printf("✉️ Message sent to %s: %s", publisher.ChannelID, message.Content)

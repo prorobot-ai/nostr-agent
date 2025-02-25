@@ -8,7 +8,6 @@ import (
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
-	"github.com/nbd-wtf/go-nostr/nip19"
 )
 
 // DMPublisher handles sending encrypted direct messages (DM) between bots
@@ -16,17 +15,11 @@ type DMPublisher struct{}
 
 // Publish sends an encrypted direct message to the receiver
 func (publisher *DMPublisher) Broadcast(b *bot.BaseBot, message *core.OutgoingMessage) error {
-	receiverPubKey := message.ReceiverPubKey
+	receiverPubKey := message.ReceiverPublicKey
 
-	// Decode the sender's secret key
-	_, sk, err := nip19.Decode(b.GetSecretKey())
-	if err != nil {
-		log.Printf("❌ Failed to decode bot's secret key: %v", err)
-		return err
-	}
-
+	sk := b.GetSecretKey()
 	// Compute the shared secret
-	shared, err := nip04.ComputeSharedSecret(receiverPubKey, sk.(string))
+	shared, err := nip04.ComputeSharedSecret(receiverPubKey, sk)
 	if err != nil {
 		log.Printf("❌ Failed to compute shared secret: %v", err)
 		return err
@@ -49,7 +42,7 @@ func (publisher *DMPublisher) Broadcast(b *bot.BaseBot, message *core.OutgoingMe
 	}
 
 	// Sign the event
-	if err := ev.Sign(sk.(string)); err != nil {
+	if err := ev.Sign(sk); err != nil {
 		log.Printf("❌ Failed to sign event: %v", err)
 		return err
 	}
