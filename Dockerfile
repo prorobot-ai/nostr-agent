@@ -1,35 +1,36 @@
-# 1️ Use the official Golang image as a base
+# 1️⃣ Use the official Golang image as a builder
 FROM golang:1.24-alpine AS builder
 
-# 2️ Set environment variables
+# 2️⃣ Set environment variables
 ENV CGO_ENABLED=0 \
     GOOS=linux \
     GOARCH=amd64
 
-# 3️ Set the working directory
+# 3️⃣ Set the working directory
 WORKDIR /app
 
-# 4️ Copy go.mod and go.sum first, then download dependencies
+# 4️⃣ Copy go.mod and go.sum first, then download dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
-# 5️ Copy the source code
+# 5️⃣ Copy the source code
 COPY . .
 
-# 6️ Build the Go application
+# 6️⃣ Build the Go application
 RUN go build -o agent ./main.go
 
-# 7️ Use a minimal base image for running the binary
+# 7️⃣ Use a minimal runtime base image
 FROM alpine:latest
 
-# 8️ Set working directory
+# 8️⃣ Set working directory
 WORKDIR /root/
 
-# 9️ Copy the compiled binary from the builder stage
+# 9️⃣ Copy the compiled binary from the builder stage
 COPY --from=builder /app/agent .
 
-# 10️ Copy the .env file for environment variables (if you have one)
+# 🔟 Copy the environment variables and configuration files
 COPY .env .
+COPY configs/ ./configs/
 
-# 11 Run the agent by default (can be overridden by command)
+# 1️⃣1️⃣ Set the entrypoint for running bots dynamically with config
 ENTRYPOINT ["./agent"]

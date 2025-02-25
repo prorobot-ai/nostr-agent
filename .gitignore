@@ -1,3 +1,5 @@
-.env
-tree.txt
 .DS_Store
+.env
+configs/
+tree.txt
+

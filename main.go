@@ -7,220 +7,133 @@ import (
 	"agent/bot/publishers"
 	"agent/core"
 	"flag"
-	"fmt"
 	"log"
-	"os"
-
-	"github.com/docopt/docopt-go"
-	"github.com/joho/godotenv"
 )
-
-const USAGE = `agent
-
-Usage:
-	agent support_bot
-	agent weather_bot
-	agent welcome_bot
-
-Specify <content> as '-' to make the publish or message command read it
-from stdin.
-`
 
 func main() {
 	initializeLogging()
-	loadEnvVariables()
 
-	opts, err := docopt.ParseArgs(USAGE, flag.Args(), "")
+	// Parse command-line flags
+	configFile := flag.String("config", "", "Path to YAML configuration file for the bot")
+	flag.Parse()
+
+	if *configFile == "" {
+		log.Fatal("❌ No configuration file provided. Use '--config=your_bot.yaml'")
+	}
+
+	// Load the bot configuration from YAML
+	botConfigs, err := core.LoadBotConfigs(*configFile)
 	if err != nil {
-		log.Fatalf("❌ Failed to parse CLI arguments: %v", err)
+		log.Fatalf("❌ Could not load bot configuration: %v", err)
 	}
 
-	relayURL, nsec, channelID := getEnvVariables()
+	// Initialize the shared BotManager
+	manager := bot.BotManager{}
 
-	// Command Execution
-	switch {
-	case opts["support_bot"].(bool):
-		startSupportBot(relayURL, nsec, channelID)
-	case opts["weather_bot"].(bool):
-		startWeatherBot(relayURL, nsec, channelID)
-	case opts["welcome_bot"].(bool):
-		startWelcomeBot(relayURL, nsec, channelID)
-	default:
-		fmt.Println("❗ Invalid command. Use '--help' for usage instructions.")
+	// Dynamically start bots based on YAML configuration
+	for _, botCfg := range botConfigs.Bots {
+		startDynamicBot(botCfg, &manager)
 	}
+
+	// Start all bots concurrently
+	manager.StartAll()
+
+	// Keep the program running
+	select {}
 }
 
-// ✅ Utility Functions
-
+// 🔄 Set up logging format
 func initializeLogging() {
 	log.SetPrefix("[agent] ")
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 }
 
-func loadEnvVariables() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("⚠️ Could not load .env file. Using system environment variables...")
-	}
-}
+// 🚀 Dynamically initialize and start a bot based on config
+func startDynamicBot(cfg core.BotConfig, manager *bot.BotManager) {
+	log.Printf("🤖 Starting bot: %s...", cfg.Name)
 
-func getEnvVariables() (string, string, string) {
-	relayURL := os.Getenv("DISPATCH_RELAY_URL")
-	nsec := os.Getenv("DISPATCH_NSEC")
-	channelID := os.Getenv("DISPATCH_CHANNEL_ID")
-
-	if nsec == "" || channelID == "" || relayURL == "" {
-		log.Fatal("❌ Missing required environment variables: DISPATCH_RELAY_URL, DISPATCH_NSEC, DISPATCH_CHANNEL_ID")
-	}
-
-	return relayURL, nsec, channelID
-}
-
-// ✅ Command Execution Function: Starts a basic DM bot
-func startSupportBot(relayURL, nsec, channelID string) {
-	log.Println("🤖 Starting Direct Message Bot...")
-
-	// 🔄 Initialize EventBus for internal communication
 	eventBus := bot.NewEventBus()
 	if eventBus == nil {
-		log.Fatal("❌ Failed to initialize EventBus")
-	} else {
-		log.Println("✅ EventBus initialized successfully")
+		log.Fatalf("❌ Failed to initialize EventBus for %s", cfg.Name)
 	}
 
-	// 📥 Set up the support handler and subscribe to events
-	supportHandler := &handlers.SupportHandler{
-		EventBus: eventBus,
-	}
-	supportHandler.Subscribe()
+	listener := resolveListener(cfg.Listener, cfg.ChannelID)
+	publisher := resolvePublisher(cfg.Publisher, cfg.ChannelID)
+	handler := resolveHandler(cfg.Handler, cfg.ChannelID)
 
-	// 🎧 Initialize the direct message listener
-	listener := &listeners.DMListener{}
-
-	// 📤 Initialize the DM publisher for sending outgoing messages
-	publisher := &publishers.DMPublisher{}
-
-	// 🤖 Create the bot instance
-	supportBot := bot.NewBaseBot(
-		relayURL,
-		nsec,
-		listener,  // Listens for incoming events
-		publisher, // Publishes outgoing messages
-		eventBus,  // EventBus for internal communication
+	// Initialize the bot
+	botInstance := bot.NewBaseBot(
+		cfg.RelayURL,
+		cfg.Nsec,
+		listener,
+		publisher,
+		eventBus,
 	)
 
-	// 🔗 Subscribe to DM responses and broadcast them using the publisher
-	eventBus.Subscribe(core.DMResponseEvent, func(message *core.OutgoingMessage) {
-		if err := publisher.Broadcast(supportBot, message); err != nil {
-			log.Printf("❌ Failed to broadcast message: %v", err)
+	// Subscribe to relevant events
+	handler.Subscribe(eventBus)
+
+	eventBus.Subscribe(resolveEventType(cfg.EventType), func(message *core.OutgoingMessage) {
+		if err := publisher.Broadcast(botInstance, message); err != nil {
+			log.Printf("❌ [%s] Failed to broadcast message: %v", cfg.Name, err)
 		}
 	})
 
-	// 🚦 Initialize the BotManager for managing concurrent bots
-	manager := bot.BotManager{}
-	manager.AddBot(supportBot)
-
-	// 🚀 Start all bots concurrently
-	manager.StartAll()
-
-	// 🔒 Keep the main thread running to prevent exit
-	select {}
+	manager.AddBot(botInstance)
 }
 
-// ✅ Command Execution Function: Starts a basic Group bot
-func startWeatherBot(relayURL, nsec, channelID string) {
-	log.Println("🤖 Starting Group Bot...")
+//////////////////////////////////////////////////////////////////////////////////////
+// ✅ Dynamic Resolver Functions
+//////////////////////////////////////////////////////////////////////////////////////
 
-	// 🔄 Initialize EventBus for internal communication
-	eventBus := bot.NewEventBus()
-	if eventBus == nil {
-		log.Fatal("❌ Failed to initialize EventBus")
-	} else {
-		log.Println("✅ EventBus initialized successfully")
+func resolveListener(listenerType, channelID string) bot.EventListener {
+	switch listenerType {
+	case "DMListener":
+		return &listeners.DMListener{}
+	case "GroupListener":
+		return &listeners.GroupListener{ChannelID: channelID}
+	default:
+		log.Fatalf("❌ Unknown listener type: %s", listenerType)
+		return nil
 	}
-
-	// 📥 Set up the support handler and subscribe to events
-	groupHandler := &handlers.GroupHandler{
-		ChannelID: channelID,
-		EventBus:  eventBus,
-	}
-	groupHandler.Subscribe()
-
-	// 🎧 Initialize the group listener
-	listener := &listeners.GroupListener{
-		ChannelID: channelID,
-	}
-
-	// 📤 Initialize the Group publisher for sending outgoing messages
-	publisher := &publishers.GroupPublisher{
-		ChannelID: channelID,
-	}
-
-	// 🤖 Create the bot instance
-	groupBot := bot.NewBaseBot(
-		relayURL,
-		nsec,
-		listener,  // Listens for incoming events
-		publisher, // Publishes outgoing messages
-		eventBus,  // EventBus for internal communication
-	)
-
-	// 🔗 Subscribe to Group responses and broadcast them using the publisher
-	eventBus.Subscribe(core.GroupResponseEvent, func(message *core.OutgoingMessage) {
-		if err := publisher.Broadcast(groupBot, message); err != nil {
-			log.Printf("❌ Failed to broadcast message: %v", err)
-		}
-	})
-
-	// 🚦 Initialize the BotManager for managing concurrent bots
-	manager := bot.BotManager{}
-	manager.AddBot(groupBot)
-
-	// 🚀 Start all bots concurrently
-	manager.StartAll()
-
-	// 🔒 Keep the main thread running to prevent exit
-	select {}
 }
 
-// ✅ Command Execution Function: Starts a basic Group bot
-func startWelcomeBot(relayURL, nsec, channelID string) {
-	log.Println("🤖 Starting Group Bot...")
-
-	eventBus := bot.NewEventBus()
-
-	welcomeHandler := &handlers.WelcomeHandler{
-		ChannelID: channelID,
-		EventBus:  eventBus,
+func resolvePublisher(publisherType, channelID string) bot.Publisher {
+	switch publisherType {
+	case "DMPublisher":
+		return &publishers.DMPublisher{}
+	case "GroupPublisher":
+		return &publishers.GroupPublisher{ChannelID: channelID}
+	default:
+		log.Fatalf("❌ Unknown publisher type: %s", publisherType)
+		return nil
 	}
-	welcomeHandler.Subscribe()
+}
 
-	listener := &listeners.DMListener{}
-
-	publisher := &publishers.GroupPublisher{
-		ChannelID: channelID,
+func resolveHandler(handlerType, channelID string) bot.EventHandler {
+	switch handlerType {
+	case "SupportHandler":
+		return &handlers.SupportHandler{}
+	case "GroupHandler":
+		return &handlers.GroupHandler{ChannelID: channelID}
+	case "ExchangeHandler":
+		return &handlers.ExchangeHandler{ChannelID: channelID}
+	case "WelcomeHandler":
+		return &handlers.WelcomeHandler{ChannelID: channelID}
+	default:
+		log.Fatalf("❌ Unknown handler type: %s", handlerType)
+		return nil
 	}
+}
 
-	groupBot := bot.NewBaseBot(
-		relayURL,
-		nsec,
-		listener,  // Listens for incoming events
-		publisher, // Publishes outgoing messages
-		eventBus,  // EventBus for internal communication
-	)
-
-	eventBus.Subscribe(core.GroupResponseEvent, func(message *core.OutgoingMessage) {
-		if err := publisher.Broadcast(groupBot, message); err != nil {
-			log.Printf("❌ Failed to broadcast message: %v", err)
-		}
-	})
-
-	// 🚦 Initialize the BotManager for managing concurrent bots
-	manager := bot.BotManager{}
-	manager.AddBot(groupBot)
-
-	// 🚀 Start all bots concurrently
-	manager.StartAll()
-
-	// 🔒 Keep the main thread running to prevent exit
-	select {}
+func resolveEventType(eventType string) core.EventType {
+	switch eventType {
+	case "DMResponseEvent":
+		return core.DMResponseEvent
+	case "GroupResponseEvent":
+		return core.GroupResponseEvent
+	default:
+		log.Fatalf("❌ Unknown event type: %s", eventType)
+		return ""
+	}
 }

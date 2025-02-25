@@ -12,12 +12,13 @@ type SupportHandler struct {
 	EventBus *bot.EventBus
 }
 
-func (h *SupportHandler) Subscribe() {
+func (h *SupportHandler) Subscribe(eventBus *bot.EventBus) {
 	log.Println("✅ Subscribed")
-	h.EventBus.Subscribe(core.DMMessageEvent, h.respondToMessage)
+	h.EventBus = eventBus
+	h.EventBus.Subscribe(core.DMMessageEvent, h.HandleMessage)
 }
 
-func (h *SupportHandler) respondToMessage(message *core.OutgoingMessage) {
+func (h *SupportHandler) HandleMessage(message *core.OutgoingMessage) {
 	switch {
 	case strings.Contains(message.Content, "!ping"):
 		reply := &core.OutgoingMessage{

@@ -8,18 +8,18 @@ import (
 	"strings"
 )
 
-// GroupHandler handles group chat commands
 type GroupHandler struct {
 	ChannelID string
 	EventBus  *bot.EventBus
 }
 
-func (h *GroupHandler) Subscribe() {
+func (h *GroupHandler) Subscribe(eventBus *bot.EventBus) {
 	log.Println("✅ Subscribed")
-	h.EventBus.Subscribe(core.GroupMessageEvent, h.weatherHandler)
+	h.EventBus = eventBus
+	h.EventBus.Subscribe(core.GroupMessageEvent, h.HandleMessage)
 }
 
-func (h *GroupHandler) weatherHandler(message *core.OutgoingMessage) {
+func (h *GroupHandler) HandleMessage(message *core.OutgoingMessage) {
 	switch {
 	case strings.Contains(message.Content, "!weather"):
 		weatherReport := weather.GetReport()

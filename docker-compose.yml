@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    command: ["support_bot"]
+    command: ["--config=configs/support_bot.yaml"]
     volumes:
       - ./logs/bot:/app/logs
 
@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    command: ["weather_bot"]
+    command: ["--config=configs/weather_bot.yaml"]
     volumes:
       - ./logs/bot:/app/logs
 
@@ -33,6 +33,6 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    command: ["welcome_bot"]
+    command: ["--config=configs/welcome_bot.yaml"]
     volumes:
       - ./logs/bot:/app/logs

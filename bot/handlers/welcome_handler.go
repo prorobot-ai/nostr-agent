@@ -14,12 +14,13 @@ type WelcomeHandler struct {
 	EventBus  *bot.EventBus
 }
 
-func (h *WelcomeHandler) Subscribe() {
+func (h *WelcomeHandler) Subscribe(eventBus *bot.EventBus) {
 	log.Println("✅ Subscribed")
-	h.EventBus.Subscribe(core.DMMessageEvent, h.welcomeHandler)
+	h.EventBus = eventBus
+	h.EventBus.Subscribe(core.DMMessageEvent, h.HandleMessage)
 }
 
-func (h *WelcomeHandler) welcomeHandler(message *core.OutgoingMessage) {
+func (h *WelcomeHandler) HandleMessage(message *core.OutgoingMessage) {
 	switch {
 	case strings.Contains(message.Content, "I'm online."):
 		reply := &core.OutgoingMessage{
