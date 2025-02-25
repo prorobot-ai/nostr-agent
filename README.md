@@ -32,6 +32,7 @@ Create a `.env` file in the root directory with the following values:
 ```env
 METEOMATICS_USERNAME=
 METEOMATICS_PASSWORD=
+```
 
 ---
 
