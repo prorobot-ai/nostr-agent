@@ -47,6 +47,12 @@ func (h *ExchangeHandler) HandleMessage(message *core.OutgoingMessage) {
 		return
 	}
 
+	// 🔥 Load peers dynamically excluding itself
+	if !h.IsActive {
+		currentBotPubKey := h.Bot.GetPublicKey()
+		h.LoadPeers(currentBotPubKey)
+	}
+
 	mention := h.extractMention(message.Content)
 
 	switch {
@@ -59,11 +65,6 @@ func (h *ExchangeHandler) HandleMessage(message *core.OutgoingMessage) {
 		h.IsActive = true
 		h.ExchangeCount = 0
 		h.CurrentIndex = 0
-
-		currentBotPubKey := h.Bot.GetPublicKey()
-
-		// 🔥 Load peers dynamically excluding itself
-		h.LoadPeers(currentBotPubKey)
 
 		time.Sleep(time.Duration(h.Chatter.InitialDelay) * time.Second)
 		h.startChatter()
