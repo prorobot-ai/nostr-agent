@@ -1,11 +1,15 @@
 package bot
 
+import (
+	"log"
+)
+
 type BotManager struct {
-	Bots         []Bot
+	Bots         []*BaseBot
 	currentIndex int
 }
 
-func (m *BotManager) AddBot(botInstance Bot) {
+func (m *BotManager) AddBot(botInstance *BaseBot) {
 	m.Bots = append(m.Bots, botInstance)
 }
 
@@ -34,4 +38,46 @@ func (m *BotManager) StartAll() {
 	for _, bot := range m.Bots {
 		go bot.Start()
 	}
+}
+
+// Dynamically assigns different programs to bots
+func (m *BotManager) AssignPrograms() {
+	// First, gather all bot public keys
+	var allPeers []string
+	for _, bot := range m.Bots {
+		allPeers = append(allPeers, bot.GetPublicKey())
+		bot.ResetPrograms()
+	}
+
+	// Now assign programs to bots
+	for _, bot := range m.Bots {
+		if bot.Name == "Yin" {
+			log.Printf("🛠 Assigning ChatterProgram to [%s]", bot.Name)
+			bot.AddProgram(&ChatterProgram{
+				MaxRunCount:     1,
+				CurrentRunCount: 0,
+				Leader:          true,
+				Peers:           filterPeers(allPeers, bot.GetPublicKey()),
+			})
+		} else if bot.Name == "Yang" {
+			log.Printf("🛠 Assigning ResponderProgram to [%s]", bot.Name)
+			bot.AddProgram(&ResponderProgram{
+				MaxRunCount:     10,
+				CurrentRunCount: 0,
+				ResponseDelay:   1,
+				Peers:           filterPeers(allPeers, bot.GetPublicKey()),
+			})
+		}
+	}
+}
+
+// **filterPeers** removes the bot's own public key from the peer list
+func filterPeers(peers []string, exclude string) []string {
+	var filtered []string
+	for _, peer := range peers {
+		if peer != exclude {
+			filtered = append(filtered, peer)
+		}
+	}
+	return filtered
 }

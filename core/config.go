@@ -9,15 +9,15 @@ import (
 
 // BotConfig defines the structure for each bot
 type BotConfig struct {
-	Name      string        `yaml:"name"`
-	RelayURL  string        `yaml:"relay_url"`
-	Nsec      string        `yaml:"nsec"`
-	ChannelID string        `yaml:"channel_id"`
-	Listener  string        `yaml:"listener"`
-	Publisher string        `yaml:"publisher"`
-	Handler   string        `yaml:"handler"`
-	EventType string        `yaml:"event_type"`
-	Chatter   ChatterConfig `yaml:"chatter"`
+	Name          string        `yaml:"name"`
+	RelayURL      string        `yaml:"relay_url"`
+	Nsec          string        `yaml:"nsec"`
+	ChannelID     string        `yaml:"channel_id"`
+	Listener      string        `yaml:"listener"`
+	Publisher     string        `yaml:"publisher"`
+	Handler       string        `yaml:"handler"`
+	EventType     string        `yaml:"event_type"`
+	ProgramConfig ProgramConfig `yaml:"program"`
 }
 
 // BotConfigs is a wrapper to handle multiple bots
@@ -25,10 +25,9 @@ type BotConfigs struct {
 	Bots []BotConfig `yaml:"bots"`
 }
 
-type ChatterConfig struct {
+type ProgramConfig struct {
 	Leader        bool `yaml:"leader"`
-	MaxExchanges  int  `yaml:"max_exchanges"`
-	InitialDelay  int  `yaml:"initial_delay"`
+	MaxRunCount   int  `yaml:"max_run_count"`
 	ResponseDelay int  `yaml:"response_delay"`
 }
 

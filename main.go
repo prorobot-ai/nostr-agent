@@ -69,13 +69,16 @@ func startDynamicBot(cfg core.BotConfig, manager *bot.BotManager) {
 		eventBus,
 	)
 
+	botInstance.SetName(cfg.Name)
+
 	handler := resolveHandler(
 		cfg.Handler,
 		cfg.ChannelID,
-		cfg.Chatter,
 		manager,
 		botInstance,
 	)
+
+	manager.AddBot(botInstance)
 
 	// Subscribe to relevant events
 	handler.Subscribe(eventBus)
@@ -85,8 +88,6 @@ func startDynamicBot(cfg core.BotConfig, manager *bot.BotManager) {
 			log.Printf("❌ [%s] Failed to broadcast message: %v", cfg.Name, err)
 		}
 	})
-
-	manager.AddBot(botInstance)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -117,12 +118,11 @@ func resolvePublisher(publisherType, channelID string) bot.Publisher {
 	}
 }
 
-func resolveHandler(handlerType, channelID string, chatter core.ChatterConfig, manager *bot.BotManager, botInstance *bot.BaseBot) bot.EventHandler {
+func resolveHandler(handlerType, channelID string, manager *bot.BotManager, botInstance *bot.BaseBot) bot.EventHandler {
 	switch handlerType {
 	case "ExchangeHandler":
 		return &handlers.ExchangeHandler{
 			ChannelID: channelID,
-			Chatter:   chatter,
 			Manager:   manager,
 			Bot:       botInstance,
 		}

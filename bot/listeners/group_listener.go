@@ -7,7 +7,6 @@ import (
 	"log"
 
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/nbd-wtf/go-nostr/nip19"
 )
 
 // GroupListener handles group channel events
@@ -64,29 +63,27 @@ func (listener *GroupListener) StartListening(b *bot.BaseBot) {
 }
 
 // ProcessEvent handles group channel messages
-func (listener *GroupListener) ProcessEvent(b bot.Bot, event *nostr.Event) {
+func (listener *GroupListener) ProcessEvent(b *bot.BaseBot, event *nostr.Event) {
 	var message core.Message
 	if err := json.Unmarshal([]byte(event.Content), &message); err != nil {
 		log.Printf("Failed to unmarshal message: %v", err)
 		return
 	}
 
-	// Send event to EventBus for inter-bot communication
-	if baseBot, ok := b.(*bot.BaseBot); ok && baseBot.EventBus != nil {
-		baseBot.EventBus.Publish(core.GroupMessageEvent, &core.OutgoingMessage{
-			ChannelID:         listener.ChannelID,
-			ReceiverPublicKey: b.GetPublicKey(),
-			SenderPublicKey:   event.PubKey,
-			Content:           message.Content,
-		})
-	}
+	b.EventBus.Publish(core.GroupMessageEvent, &core.OutgoingMessage{
+		ChannelID:         listener.ChannelID,
+		ReceiverPublicKey: b.GetPublicKey(),
+		SenderPublicKey:   event.PubKey,
+		Content:           message.Content,
+	})
 
-	npub, _ := nip19.EncodePublicKey(b.GetPublicKey())
-	ID := npub[len(npub)-4:]
-	log.Printf("🎧 [Group] [%s] [%s]: %s ", ID, listener.ChannelID, message.Content)
+	channelID := listener.ChannelID
+	channelID = channelID[len(channelID)-3:]
+
+	log.Printf("[%s] 👂 [%s]: %s", b.Name, channelID, message.Content)
 }
 
-func (listener *GroupListener) Filters(b bot.Bot) []nostr.Filter {
+func (listener *GroupListener) Filters(b *bot.BaseBot) []nostr.Filter {
 	return []nostr.Filter{
 		{
 			Kinds: []int{nostr.KindChannelMessage},
@@ -97,7 +94,7 @@ func (listener *GroupListener) Filters(b bot.Bot) []nostr.Filter {
 }
 
 // HandleConnectionLoss reconnects the bot
-func (listener *GroupListener) HandleConnectionLoss(bot bot.Bot) {
+func (listener *GroupListener) HandleConnectionLoss(bot *bot.BaseBot) {
 	log.Println("🔄 Reconnecting Group Listener...")
 	bot.Start()
 }

@@ -17,7 +17,7 @@ type DMPublisher struct{}
 func (publisher *DMPublisher) Broadcast(b *bot.BaseBot, message *core.OutgoingMessage) error {
 	receiverPubKey := message.ReceiverPublicKey
 
-	sk := b.GetSecretKey()
+	sk := b.SecretKey
 	// Compute the shared secret
 	shared, err := nip04.ComputeSharedSecret(receiverPubKey, sk)
 	if err != nil {

@@ -19,9 +19,9 @@ type Bot interface {
 
 // EventListener defines behavior for listening to events
 type EventListener interface {
-	StartListening(bot *BaseBot)              // Starts listening for events
-	ProcessEvent(bot Bot, event *nostr.Event) // Processes a received event
-	HandleConnectionLoss(bot Bot)             // Handles relay disconnections
+	StartListening(bot *BaseBot)                   // Starts listening for events
+	ProcessEvent(bot *BaseBot, event *nostr.Event) // Processes a received event
+	HandleConnectionLoss(bot *BaseBot)             // Handles relay disconnections
 }
 
 type EventHandler interface {

@@ -7,7 +7,6 @@ import (
 	"log"
 
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/nbd-wtf/go-nostr/nip19"
 )
 
 // GroupPublisher handles sending messages to a group/channel
@@ -32,11 +31,10 @@ func (publisher *GroupPublisher) Broadcast(b *bot.BaseBot, message *core.Outgoin
 	if err := b.Relay.Publish(b.Context, event); err != nil {
 		log.Printf("❌ Failed to publish group message: %v", err)
 	} else {
-		npub, _ := nip19.EncodePublicKey(b.PublicKey)
-		ID := npub[len(npub)-4:]
-		log.Printf("📢 Group message sent to channel %s %s", publisher.ChannelID, ID)
-	}
+		groupID := publisher.ChannelID
+		groupID = groupID[len(groupID)-3:]
 
-	log.Printf("✉️ Message sent to %s: %s", publisher.ChannelID, message.Content)
+		log.Printf("[%s] 🗣️ [%s] %s", b.Name, groupID, message.Content)
+	}
 	return nil
 }

@@ -63,7 +63,7 @@ func (listener *DMListener) StartListening(b *bot.BaseBot) {
 }
 
 // ProcessEvent handles incoming direct message events
-func (listener *DMListener) ProcessEvent(b bot.Bot, event *nostr.Event) {
+func (listener *DMListener) ProcessEvent(b *bot.BaseBot, event *nostr.Event) {
 	// 🔑 Decrypt the incoming message
 	shared, _ := nip04.ComputeSharedSecret(event.PubKey, b.GetSecretKey())
 	npub, _ := nip19.EncodePublicKey(event.PubKey)
@@ -85,23 +85,14 @@ func (listener *DMListener) ProcessEvent(b bot.Bot, event *nostr.Event) {
 	log.Printf("💬 [DM from %s]: %s", npub, message.Content)
 
 	// 📩 Pass the event to EventBus
-	if baseBot, ok := b.(*bot.BaseBot); ok && baseBot.EventBus != nil {
-		baseBot.EventBus.Publish(core.DMMessageEvent, &core.OutgoingMessage{
-			ReceiverPublicKey: event.PubKey,
-			Content:           message.Content,
-		})
-	}
+	b.EventBus.Publish(core.DMMessageEvent, &core.OutgoingMessage{
+		ReceiverPublicKey: event.PubKey,
+		Content:           message.Content,
+	})
 }
 
-func (listener *DMListener) Filters(b bot.Bot) []nostr.Filter {
-	baseBot, ok := b.(*bot.BaseBot)
-	if !ok {
-		log.Println("❌ Failed to cast Bot to BaseBot")
-		return nil
-	}
-
-	_, pubKeyDecoded, _ := nip19.Decode(baseBot.GetPublicKey())
-	tags := map[string][]string{"p": {pubKeyDecoded.(string)}}
+func (listener *DMListener) Filters(b *bot.BaseBot) []nostr.Filter {
+	tags := map[string][]string{"p": {b.PublicKey}}
 
 	return []nostr.Filter{
 		{
@@ -113,7 +104,7 @@ func (listener *DMListener) Filters(b bot.Bot) []nostr.Filter {
 }
 
 // HandleConnectionLoss handles relay disconnections
-func (listener *DMListener) HandleConnectionLoss(bot bot.Bot) {
+func (listener *DMListener) HandleConnectionLoss(bot *bot.BaseBot) {
 	log.Println("🔄 Reconnecting DM Listener...")
 	bot.Start() // Attempt to restart the bot
 }
