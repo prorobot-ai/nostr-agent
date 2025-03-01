@@ -36,3 +36,15 @@ services:
     command: ["--config=configs/welcome_bot.yaml"]
     volumes:
       - ./logs/bot:/app/logs
+
+  hype:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hype
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ["--config=configs/hype.yaml"]
+    volumes:
+      - ./logs/bot:/app/logs
