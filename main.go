@@ -28,11 +28,11 @@ func main() {
 	}
 
 	// Initialize the shared BotManager
-	manager := bot.BotManager{}
+	manager := bot.NewBotManager()
 
 	// Dynamically start bots based on YAML configuration
 	for _, botCfg := range botConfigs.Bots {
-		startDynamicBot(botCfg, &manager)
+		startDynamicBot(botCfg, manager)
 	}
 
 	// Start all bots concurrently
@@ -49,44 +49,39 @@ func initializeLogging() {
 }
 
 // 🚀 Dynamically initialize and start a bot based on config
-func startDynamicBot(cfg core.BotConfig, manager *bot.BotManager) {
-	log.Printf("🤖 Starting bot: %s...", cfg.Name)
+func startDynamicBot(config core.BotConfig, manager *bot.BotManager) {
+	log.Printf("🤖 Starting bot: %s...", config.Name)
 
 	eventBus := bot.NewEventBus()
 	if eventBus == nil {
-		log.Fatalf("❌ Failed to initialize EventBus for %s", cfg.Name)
+		log.Fatalf("❌ Failed to initialize EventBus for %s", config.Name)
 	}
 
-	listener := resolveListener(cfg.Listener, cfg.ChannelID)
-	publisher := resolvePublisher(cfg.Publisher, cfg.ChannelID)
+	listener := initializeListener(config.Listener, config.ChannelID)
+	publisher := initializePublisher(config.Publisher, config.ChannelID)
 
 	// Initialize the bot
-	botInstance := bot.NewBaseBot(
-		cfg.RelayURL,
-		cfg.Nsec,
+	bot := bot.NewBaseBot(
+		config,
 		listener,
 		publisher,
 		eventBus,
 	)
 
-	botInstance.SetName(cfg.Name)
-	botInstance.SetAliases(cfg.Aliases)
-
-	handler := resolveHandler(
-		cfg.Handler,
-		cfg.ChannelID,
+	handler := initializeHandler(
+		config.Handler,
+		config.ChannelID,
 		manager,
-		botInstance,
+		bot,
 	)
 
-	manager.AddBot(botInstance)
+	manager.AddBot(bot)
 
-	// Subscribe to relevant events
 	handler.Subscribe(eventBus)
 
-	eventBus.Subscribe(resolveEventType(cfg.EventType), func(message *core.OutgoingMessage) {
-		if err := publisher.Broadcast(botInstance, message); err != nil {
-			log.Printf("❌ [%s] Failed to broadcast message: %v", cfg.Name, err)
+	eventBus.Subscribe(getEventType(config.EventType), func(message *core.OutgoingMessage) {
+		if err := publisher.Broadcast(bot, message); err != nil {
+			log.Printf("❌ [%s] Failed to broadcast message: %v", config.Name, err)
 		}
 	})
 }
@@ -95,7 +90,7 @@ func startDynamicBot(cfg core.BotConfig, manager *bot.BotManager) {
 // ✅ Dynamic Resolver Functions
 //////////////////////////////////////////////////////////////////////////////////////
 
-func resolveListener(listenerType, channelID string) bot.EventListener {
+func initializeListener(listenerType, channelID string) bot.EventListener {
 	switch listenerType {
 	case "DMListener":
 		return &listeners.DMListener{}
@@ -107,7 +102,7 @@ func resolveListener(listenerType, channelID string) bot.EventListener {
 	}
 }
 
-func resolvePublisher(publisherType, channelID string) bot.Publisher {
+func initializePublisher(publisherType, channelID string) bot.Publisher {
 	switch publisherType {
 	case "DMPublisher":
 		return &publishers.DMPublisher{}
@@ -119,7 +114,7 @@ func resolvePublisher(publisherType, channelID string) bot.Publisher {
 	}
 }
 
-func resolveHandler(handlerType, channelID string, manager *bot.BotManager, botInstance *bot.BaseBot) bot.EventHandler {
+func initializeHandler(handlerType, channelID string, manager *bot.BotManager, botInstance *bot.BaseBot) bot.EventHandler {
 	switch handlerType {
 	case "ExchangeHandler":
 		return &handlers.ExchangeHandler{
@@ -139,7 +134,7 @@ func resolveHandler(handlerType, channelID string, manager *bot.BotManager, botI
 	}
 }
 
-func resolveEventType(eventType string) core.EventType {
+func getEventType(eventType string) core.EventType {
 	switch eventType {
 	case "DMResponseEvent":
 		return core.DMResponseEvent

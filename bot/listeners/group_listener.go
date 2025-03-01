@@ -72,7 +72,7 @@ func (listener *GroupListener) ProcessEvent(b *bot.BaseBot, event *nostr.Event) 
 
 	b.EventBus.Publish(core.GroupMessageEvent, &core.OutgoingMessage{
 		ChannelID:         listener.ChannelID,
-		ReceiverPublicKey: b.GetPublicKey(),
+		ReceiverPublicKey: b.PublicKey,
 		SenderPublicKey:   event.PubKey,
 		Content:           message.Content,
 	})
@@ -80,7 +80,7 @@ func (listener *GroupListener) ProcessEvent(b *bot.BaseBot, event *nostr.Event) 
 	channelID := listener.ChannelID
 	channelID = channelID[len(channelID)-3:]
 
-	log.Printf("[%s] 👂 [%s]: %s", b.Name, channelID, message.Content)
+	log.Printf("[%s] 👂 [%s]: %s", b.Config.Name, channelID, message.Content)
 }
 
 func (listener *GroupListener) Filters(b *bot.BaseBot) []nostr.Filter {

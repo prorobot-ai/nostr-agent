@@ -1,73 +1,77 @@
 package bot
 
 import (
+	"agent/bot/programs"
 	"log"
 )
 
 type BotManager struct {
-	Bots         []*BaseBot
-	currentIndex int
+	Bots     []*BaseBot
+	Programs map[*BaseBot][]programs.BotProgram
 }
 
-func (m *BotManager) AddBot(botInstance *BaseBot) {
-	m.Bots = append(m.Bots, botInstance)
-}
-
-// 🔄 Get the next bot mention in round-robin fashion
-func (m *BotManager) GetNextBotMention() string {
-	if len(m.Bots) == 0 {
-		return ""
+func NewBotManager() *BotManager {
+	return &BotManager{
+		Bots:     []*BaseBot{},
+		Programs: make(map[*BaseBot][]programs.BotProgram),
 	}
-	nextIndex := (m.currentIndex + 1) % len(m.Bots)
-	nextBot := m.Bots[nextIndex]
-	m.currentIndex = nextIndex
-	return nextBot.GetPublicKey()
 }
 
-func (m *BotManager) GetPeers(exclude string) []string {
-	var peers []string
-	for _, b := range m.Bots {
-		if b.GetPublicKey() != exclude { // Avoid adding itself
-			peers = append(peers, b.GetPublicKey())
-		}
-	}
-	return peers
+func (m *BotManager) AddBot(bot *BaseBot) {
+	m.Bots = append(m.Bots, bot)
 }
 
 func (m *BotManager) StartAll() {
+	m.AssignPrograms()
+
 	for _, bot := range m.Bots {
 		go bot.Start()
 	}
 }
 
-// Dynamically assigns different programs to bots
-func (m *BotManager) AssignPrograms() {
-	// First, gather all bot public keys
+func (m *BotManager) InitializePrograms(bot *BaseBot) {
+	buffer := []programs.BotProgram{} // ✅ Correct slice type
+
+	bot.ResetPrograms()
+
 	var allPeers []string
-	for _, bot := range m.Bots {
-		allPeers = append(allPeers, bot.GetPublicKey())
-		bot.ResetPrograms()
+	for _, b := range m.Bots {
+		allPeers = append(allPeers, b.PublicKey)
 	}
 
-	// Now assign programs to bots
+	if bot.Config.Name == "Yin" {
+		log.Printf("🛠 Assigning ChatterProgram to [%s]", bot.Config.Name)
+		buffer = append(buffer, &programs.ChatterProgram{
+			MaxRunCount:     1,
+			CurrentRunCount: 0,
+			Leader:          true,
+			Peers:           filterPeers(allPeers, bot.PublicKey),
+		})
+	} else if bot.Config.Name == "Yang" {
+		log.Printf("🛠 Assigning ResponderProgram to [%s]", bot.Config.Name)
+		buffer = append(buffer, &programs.ResponderProgram{
+			MaxRunCount:     10,
+			CurrentRunCount: 0,
+			ResponseDelay:   1,
+			Peers:           filterPeers(allPeers, bot.PublicKey),
+		})
+	} else if bot.Config.Name == "HypeWizard" {
+		log.Printf("🛠 Assigning ConductorProgram to [%s]", bot.Config.Name)
+		buffer = append(buffer, &programs.ConductorProgram{
+			MaxRunCount:     10,
+			CurrentRunCount: 0,
+			ResponseDelay:   1,
+			Peers:           filterPeers(allPeers, bot.PublicKey),
+		})
+	}
+
+	bot.AssignPrograms(buffer)
+	m.Programs[bot] = buffer
+}
+
+func (m *BotManager) AssignPrograms() {
 	for _, bot := range m.Bots {
-		if bot.Name == "Yin" {
-			log.Printf("🛠 Assigning ChatterProgram to [%s]", bot.Name)
-			bot.AddProgram(&ChatterProgram{
-				MaxRunCount:     1,
-				CurrentRunCount: 0,
-				Leader:          true,
-				Peers:           filterPeers(allPeers, bot.GetPublicKey()),
-			})
-		} else if bot.Name == "Yang" {
-			log.Printf("🛠 Assigning ResponderProgram to [%s]", bot.Name)
-			bot.AddProgram(&ResponderProgram{
-				MaxRunCount:     10,
-				CurrentRunCount: 0,
-				ResponseDelay:   1,
-				Peers:           filterPeers(allPeers, bot.GetPublicKey()),
-			})
-		}
+		m.InitializePrograms(bot)
 	}
 }
 

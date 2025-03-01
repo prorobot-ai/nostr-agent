@@ -34,7 +34,7 @@ func (publisher *DMPublisher) Broadcast(b *bot.BaseBot, message *core.OutgoingMe
 
 	// Create the event
 	ev := nostr.Event{
-		PubKey:    b.GetPublicKey(),
+		PubKey:    b.PublicKey,
 		CreatedAt: nostr.Now(),
 		Kind:      nostr.KindEncryptedDirectMessage,
 		Content:   encryptedMessage,

@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"log"
+	"strings"
 )
 
 // 🛠️ Convert structured content to JSON string
@@ -35,4 +36,20 @@ func CreateMessage(text string) string {
 	}
 
 	return string(jsonData)
+}
+
+// 🛠️ Split message into words
+func SplitMessageContent(content string) []string {
+	return strings.Split(content, " ")
+}
+
+// Extracts mentions
+func ExtractMention(content string) string {
+	words := strings.Split(content, " ")
+	for _, word := range words {
+		if strings.HasPrefix(word, "@") {
+			return word[1:]
+		}
+	}
+	return ""
 }

@@ -17,7 +17,7 @@ type GroupPublisher struct {
 
 func (publisher *GroupPublisher) Broadcast(b *bot.BaseBot, message *core.OutgoingMessage) error {
 	event := nostr.Event{
-		PubKey:    b.GetPublicKey(),
+		PubKey:    b.PublicKey,
 		CreatedAt: nostr.Now(),
 		Kind:      nostr.KindChannelMessage,
 		Content:   message.Content,
@@ -34,7 +34,7 @@ func (publisher *GroupPublisher) Broadcast(b *bot.BaseBot, message *core.Outgoin
 		groupID := publisher.ChannelID
 		groupID = groupID[len(groupID)-3:]
 
-		log.Printf("[%s] 🗣️ [%s] %s", b.Name, groupID, message.Content)
+		log.Printf("[%s] 🗣️ [%s] %s", b.Config.Name, groupID, message.Content)
 	}
 	return nil
 }

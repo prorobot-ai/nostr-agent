@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"agent/bot/programs"
 	"agent/core"
 	"context"
 	"log"
@@ -14,30 +15,34 @@ import (
 type BaseBot struct {
 	mu sync.Mutex
 
-	Name             string
-	Aliases          []string
+	Config   core.BotConfig
+	Programs []programs.BotProgram
+
+	Context    context.Context
+	CancelFunc context.CancelFunc
+
 	RelayURL         string
 	SecretKey        string
 	PublicKey        string
-	Context          context.Context
-	CancelFunc       context.CancelFunc
-	Relay            *nostr.Relay
 	IsActiveListener bool
-	Listener         EventListener
-	Publisher        Publisher
-	EventBus         *EventBus
-	Programs         []BotProgram
+
+	Relay *nostr.Relay
+
+	Listener  EventListener
+	Publisher Publisher
+	EventBus  *EventBus
 }
 
 // NewBaseBot initializes a new instance of BaseBot
-func NewBaseBot(relayURL, nsec string, listener EventListener, publisher Publisher, eventBus *EventBus) *BaseBot {
+func NewBaseBot(config core.BotConfig, listener EventListener, publisher Publisher, eventBus *EventBus) *BaseBot {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	_, sk, _ := nip19.Decode(nsec)
+	_, sk, _ := nip19.Decode(config.Nsec)
 	pk, _ := nostr.GetPublicKey(sk.(string))
 
 	return &BaseBot{
-		RelayURL:         relayURL,
+		Config:           config,
+		RelayURL:         config.RelayURL,
 		SecretKey:        sk.(string),
 		PublicKey:        pk,
 		Context:          ctx,
@@ -58,14 +63,6 @@ func (b *BaseBot) Start() {
 	b.Listener.StartListening(b)
 }
 
-func (b *BaseBot) SetName(name string) {
-	b.Name = name
-}
-
-func (b *BaseBot) SetAliases(aliases []string) {
-	b.Aliases = aliases
-}
-
 // Connects to the relay
 func (b *BaseBot) connectToRelay() error {
 	relay, err := nostr.RelayConnect(b.Context, b.RelayURL)
@@ -75,10 +72,10 @@ func (b *BaseBot) connectToRelay() error {
 
 	b.Relay = relay
 	// 📝 Check if there are aliases before logging them
-	if len(b.Aliases) > 0 {
-		log.Printf("✅ [%s] %v Connected 📡 Aliases: %s", b.Name, b.Aliases, b.RelayURL)
+	if len(b.Config.Aliases) > 0 {
+		log.Printf("✅ [%s] %v Connected 📡 Aliases: %s", b.Config.Name, b.Config.Aliases, b.RelayURL)
 	} else {
-		log.Printf("✅ [%s] Connected 📡 [%s]", b.Name, b.RelayURL)
+		log.Printf("✅ [%s] Connected 📡 [%s]", b.Config.Name, b.RelayURL)
 	}
 	return nil
 }
@@ -92,63 +89,19 @@ func (b *BaseBot) Stop() {
 	log.Println("🛑 Bot stopped gracefully")
 }
 
-// Publishes a message using the Publisher interface
-func (b *BaseBot) Publish(message *core.OutgoingMessage) {
-	b.Publisher.Broadcast(b, message)
+// ============================================================
+// 🎛️ Bot interface implementations
+// ============================================================
+func (b *BaseBot) GetAliases() []string {
+	return b.Config.Aliases
 }
 
-// Bot interface implementations
 func (b *BaseBot) GetPublicKey() string {
 	return b.PublicKey
 }
 
-func (b *BaseBot) GetSecretKey() string {
-	return b.SecretKey
-}
-
-func (b *BaseBot) IsReady() bool {
-	return b.IsActiveListener
-}
-
-// AssignProgram adds a new program to the bot
-func (bot *BaseBot) AddProgram(program BotProgram) {
-	bot.mu.Lock()
-	defer bot.mu.Unlock()
-
-	bot.Programs = append(bot.Programs, program)
-	log.Printf("🚀 [%s] Assigned new program", bot.Name)
-}
-
-// ExecutePrograms runs all active programs for a bot
-func (bot *BaseBot) ExecutePrograms(message *core.OutgoingMessage) {
-	bot.mu.Lock()
-	defer bot.mu.Unlock()
-
-	log.Printf("⚙️ [%s] Executing [%d] Programs on message: %s", bot.Name, len(bot.Programs), message.Content)
-
-	var programsToRemove []int
-
-	for i, program := range bot.Programs {
-		if program.ShouldRun(message) {
-			result := program.Run(bot, message)
-			log.Printf("[%s] [%s]", bot.Name, result)
-
-			if !program.IsActive() {
-				programsToRemove = append(programsToRemove, i)
-			}
-		}
-	}
-
-	// ✅ Now remove all completed programs
-	for i := len(programsToRemove) - 1; i >= 0; i-- {
-		index := programsToRemove[i]
-		log.Printf("🗑️ [%s] Removing completed program: %T", bot.Name, bot.Programs[index])
-		bot.Programs = append(bot.Programs[:index], bot.Programs[index+1:]...)
-	}
-}
-
 // GetNextReceiver picks the next peer for a given program
-func (bot *BaseBot) GetNextReceiver(program *ChatterProgram) string {
+func (bot *BaseBot) GetNextReceiver(program *programs.ChatterProgram) string {
 	// bot.mu.Lock()
 	// defer bot.mu.Unlock()
 
@@ -161,13 +114,66 @@ func (bot *BaseBot) GetNextReceiver(program *ChatterProgram) string {
 	return program.Peers[index]
 }
 
-func (bot *BaseBot) ResetPrograms() {
-	bot.Programs = []BotProgram{}
+// Publishes a message using the Publisher interface
+func (b *BaseBot) Publish(message *core.OutgoingMessage) {
+	b.Publisher.Broadcast(b, message)
 }
 
-// BotProgram defines the interface for all programs a bot can execute
-type BotProgram interface {
-	Run(b *BaseBot, message *core.OutgoingMessage) string // 🚀 What should the bot do?
-	ShouldRun(message *core.OutgoingMessage) bool         // 🔄 When should this program activate?
-	IsActive() bool
+func (b *BaseBot) IsReady() bool {
+	return b.IsActiveListener
+}
+
+func (bot *BaseBot) AssignPrograms(p []programs.BotProgram) {
+	bot.mu.Lock()
+	defer bot.mu.Unlock()
+
+	// ✅ Expand slice `p` into individual elements
+	bot.Programs = append(bot.Programs, p...)
+
+	log.Printf("🧮 [%s] Assigned [%d] programs", bot.Config.Name, len(p))
+}
+
+func (bot *BaseBot) RemoveProgram(p programs.BotProgram) {
+	bot.mu.Lock()
+	defer bot.mu.Unlock()
+
+	for i, program := range bot.Programs {
+		if program == p {
+			bot.Programs = append(bot.Programs[:i], bot.Programs[i+1:]...)
+			log.Printf("🗑️ [%s] Removed completed program: %T", bot.Config.Name, p)
+			break
+		}
+	}
+}
+
+func (bot *BaseBot) ResetPrograms() {
+	bot.Programs = []programs.BotProgram{}
+}
+
+// ExecutePrograms runs all active programs for a bot
+func (bot *BaseBot) ExecutePrograms(message *core.OutgoingMessage) {
+	bot.mu.Lock()
+	defer bot.mu.Unlock()
+
+	log.Printf("⚙️ [%s] Executing [%d] Programs on message: %s", bot.Config.Name, len(bot.Programs), message.Content)
+
+	var programsToRemove []int
+
+	for i, program := range bot.Programs {
+		if program.ShouldRun(message) {
+			result := program.Run(bot, message)
+			log.Printf("[%s] [%s]", bot.Config.Name, result)
+
+			if !program.IsActive() {
+				programsToRemove = append(programsToRemove, i)
+			}
+		}
+	}
+
+	// ✅ Now remove all completed programs
+	for i := len(programsToRemove) - 1; i >= 0; i-- {
+		index := programsToRemove[i]
+		log.Printf("🗑️ [%s] Removing completed program: %T", bot.Config.Name, bot.Programs[index])
+		bot.Programs = append(bot.Programs[:index], bot.Programs[index+1:]...)
+	}
 }

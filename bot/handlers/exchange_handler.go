@@ -4,7 +4,6 @@ import (
 	"agent/bot"
 	"agent/core"
 	"log"
-	"strings"
 
 	"github.com/nbd-wtf/go-nostr/nip19"
 )
@@ -26,21 +25,21 @@ func (h *ExchangeHandler) Subscribe(eventBus *bot.EventBus) {
 	h.EventBus = eventBus
 	h.encodedPublicKey, _ = nip19.EncodePublicKey(h.Bot.PublicKey)
 
-	log.Printf("✅ Subscribed 🚌 [%s]", h.Bot.Name)
+	log.Printf("✅ Subscribed 🚌 [%s]", h.Bot.Config.Name)
 	h.EventBus.Subscribe(core.GroupMessageEvent, h.HandleMessage)
 }
 
 // 🔄 Forward messages to bot for processing
 func (h *ExchangeHandler) HandleMessage(message *core.OutgoingMessage) {
-	log.Printf("📩 [%s] Handling Message: %s", h.Bot.Name, message.Content) // ✅ Log every message received
+	log.Printf("📩 [%s] Handling Message: %s", h.Bot.Config.Name, message.Content) // ✅ Log every message received
 
-	if strings.Contains(message.Content, "🧮") {
-		h.Manager.AssignPrograms()
-	}
+	// if strings.Contains(message.Content, "🧮") {
+	// 	h.Manager.AssignPrograms()
+	// }
 
 	// 🚫 Don't process own messages
 	if message.SenderPublicKey == h.Bot.PublicKey {
-		log.Printf("⏩ [%s] Ignoring its own message.", h.Bot.Name)
+		log.Printf("⏩ [%s] Ignoring its own message.", h.Bot.Config.Name)
 		return
 	}
 
