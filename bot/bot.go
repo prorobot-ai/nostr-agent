@@ -15,6 +15,7 @@ type BaseBot struct {
 	mu sync.Mutex
 
 	Name             string
+	Aliases          []string
 	RelayURL         string
 	SecretKey        string
 	PublicKey        string
@@ -61,6 +62,10 @@ func (b *BaseBot) SetName(name string) {
 	b.Name = name
 }
 
+func (b *BaseBot) SetAliases(aliases []string) {
+	b.Aliases = aliases
+}
+
 // Connects to the relay
 func (b *BaseBot) connectToRelay() error {
 	relay, err := nostr.RelayConnect(b.Context, b.RelayURL)
@@ -69,7 +74,12 @@ func (b *BaseBot) connectToRelay() error {
 	}
 
 	b.Relay = relay
-	log.Printf("✅ Connected 📡 [%s] [%s]", b.Name, b.RelayURL)
+	// 📝 Check if there are aliases before logging them
+	if len(b.Aliases) > 0 {
+		log.Printf("✅ [%s] %v Connected 📡 Aliases: %s", b.Name, b.Aliases, b.RelayURL)
+	} else {
+		log.Printf("✅ [%s] Connected 📡 [%s]", b.Name, b.RelayURL)
+	}
 	return nil
 }
 

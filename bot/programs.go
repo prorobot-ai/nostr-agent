@@ -2,7 +2,6 @@ package bot
 
 import (
 	"agent/core"
-	"encoding/json"
 	"log"
 	"strconv"
 	"strings"
@@ -73,7 +72,7 @@ func (p *ChatterProgram) startToMention(bot *BaseBot, message *core.OutgoingMess
 	}
 
 	reply := &core.OutgoingMessage{
-		Content:           createMessage("@" + encodedPublicKey + " 0"),
+		Content:           core.CreateMessage("@" + encodedPublicKey + " 0"),
 		ChannelID:         message.ChannelID,
 		ReceiverPublicKey: bot.PublicKey,
 	}
@@ -161,7 +160,7 @@ func (p *ResponderProgram) Run(bot *BaseBot, message *core.OutgoingMessage) stri
 
 	// 🎯 4. Construct the response
 	reply := &core.OutgoingMessage{
-		Content:           createMessage("@" + encodedPublicKey + " " + strconv.Itoa(number)),
+		Content:           core.CreateMessage("@" + encodedPublicKey + " " + strconv.Itoa(number)),
 		ChannelID:         message.ChannelID,
 		ReceiverPublicKey: bot.GetPublicKey(),
 	}
@@ -169,22 +168,6 @@ func (p *ResponderProgram) Run(bot *BaseBot, message *core.OutgoingMessage) stri
 	// 🚀 5. Publish the response
 	bot.EventBus.Publish(core.GroupResponseEvent, reply)
 	return "🟢"
-}
-
-// 🛠️ Convert structured content to JSON string
-func createMessage(text string) string {
-	message := core.ContentStructure{
-		Content: text,
-		Kind:    "message",
-	}
-
-	jsonData, err := json.Marshal(message)
-	if err != nil {
-		log.Println("❌ Error marshalling JSON:", err)
-		return ""
-	}
-
-	return string(jsonData)
 }
 
 // 🛠️ Split message into words

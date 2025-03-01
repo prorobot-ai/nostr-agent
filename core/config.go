@@ -10,6 +10,7 @@ import (
 // BotConfig defines the structure for each bot
 type BotConfig struct {
 	Name          string        `yaml:"name"`
+	Aliases       []string      `yaml:"aliases"`
 	RelayURL      string        `yaml:"relay_url"`
 	Nsec          string        `yaml:"nsec"`
 	ChannelID     string        `yaml:"channel_id"`

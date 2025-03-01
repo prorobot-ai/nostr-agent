@@ -70,6 +70,7 @@ func startDynamicBot(cfg core.BotConfig, manager *bot.BotManager) {
 	)
 
 	botInstance.SetName(cfg.Name)
+	botInstance.SetAliases(cfg.Aliases)
 
 	handler := resolveHandler(
 		cfg.Handler,
