@@ -25,7 +25,7 @@ func (h *GroupHandler) HandleMessage(message *core.OutgoingMessage) {
 		weatherReport := weather.GetReport()
 
 		reply := &core.OutgoingMessage{
-			Content:   weatherReport,
+			Content:   core.CreateContent(weatherReport, "message"),
 			ChannelID: h.ChannelID,
 		}
 		h.EventBus.Publish(core.GroupResponseEvent, reply)
