@@ -27,9 +27,10 @@ type BotConfigs struct {
 }
 
 type ProgramConfig struct {
-	Leader        bool `yaml:"leader"`
-	MaxRunCount   int  `yaml:"max_run_count"`
-	ResponseDelay int  `yaml:"response_delay"`
+	MaxRunCount   int    `yaml:"max_run_count"`
+	ResponseDelay int    `yaml:"response_delay"`
+	Url           string `yaml:"url"`
+	Address       string `yaml:"address"`
 }
 
 // LoadBotConfigs loads the bot configurations from a YAML file
