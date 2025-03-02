@@ -3,8 +3,6 @@ package handlers
 import (
 	"agent/bot"
 	"agent/core"
-	"encoding/json"
-	"fmt"
 	"log"
 	"strings"
 
@@ -27,24 +25,9 @@ func (h *WelcomeHandler) HandleMessage(message *core.OutgoingMessage) {
 	case strings.Contains(message.Content, "I'm online."):
 		npub, _ := nip19.EncodePublicKey(message.ReceiverPublicKey)
 		reply := &core.OutgoingMessage{
-			Content:   h.createMessage(npub),
+			Content:   core.CreateContent(npub, "subcriber"),
 			ChannelID: h.ChannelID,
 		}
 		h.EventBus.Publish(core.GroupResponseEvent, reply)
 	}
-}
-
-func (h *WelcomeHandler) createMessage(content string) string {
-	message := core.ContentStructure{
-		Content: content,
-		Kind:    "subscriber",
-	}
-
-	jsonData, err := json.Marshal(message)
-	if err != nil {
-		fmt.Println("Error marshalling JSON:", err)
-		return ""
-	}
-
-	return string(jsonData)
 }

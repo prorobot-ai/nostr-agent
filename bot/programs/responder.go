@@ -80,7 +80,7 @@ func (p *ResponderProgram) Run(bot Bot, message *core.OutgoingMessage) string {
 	}
 
 	reply := &core.OutgoingMessage{
-		Content:           core.CreateMessage("@" + encodedPublicKey + " " + strconv.Itoa(number)),
+		Content:           core.CreateContent("@"+encodedPublicKey+" "+strconv.Itoa(number), "message"),
 		ChannelID:         message.ChannelID,
 		ReceiverPublicKey: bot.GetPublicKey(),
 	}

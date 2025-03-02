@@ -22,22 +22,6 @@ func CreateContent(text string, kind string) string {
 	return string(jsonData)
 }
 
-// 🛠️ Convert structured content to JSON string
-func CreateMessage(text string) string {
-	message := ContentStructure{
-		Content: text,
-		Kind:    "message",
-	}
-
-	jsonData, err := json.Marshal(message)
-	if err != nil {
-		log.Println("❌ Error marshalling JSON:", err)
-		return ""
-	}
-
-	return string(jsonData)
-}
-
 // 🛠️ Split message into words
 func SplitMessageContent(content string) []string {
 	return strings.Split(content, " ")

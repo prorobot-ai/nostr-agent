@@ -65,7 +65,7 @@ func (p *ChatterProgram) startToMention(bot Bot, message *core.OutgoingMessage) 
 	}
 
 	reply := &core.OutgoingMessage{
-		Content:           core.CreateMessage("@" + encodedPublicKey + " 0"),
+		Content:           core.CreateContent("@"+encodedPublicKey+" 0", "message"),
 		ChannelID:         message.ChannelID,
 		ReceiverPublicKey: bot.GetPublicKey(),
 	}
