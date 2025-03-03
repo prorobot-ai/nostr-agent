@@ -42,29 +42,25 @@ func (m *BotManager) InitializePrograms(bot *BaseBot) {
 	if bot.Config.Name == "Yin" {
 		log.Printf("🛠 Assigning ChatterProgram to [%s]", bot.Config.Name)
 		buffer = append(buffer, &programs.ChatterProgram{
-			MaxRunCount:     1,
-			CurrentRunCount: 0,
-			Leader:          true,
-			Peers:           filterPeers(allPeers, bot.PublicKey),
+			ProgramConfig: bot.Config.ProgramConfig,
+			Leader:        true,
+			Peers:         filterPeers(allPeers, bot.PublicKey),
 		})
 	} else if bot.Config.Name == "Yang" {
 		log.Printf("🛠 Assigning ResponderProgram to [%s]", bot.Config.Name)
 		buffer = append(buffer, &programs.ResponderProgram{
-			MaxRunCount:   10,
-			ResponseDelay: 1,
+			ProgramConfig: bot.Config.ProgramConfig,
 			Peers:         filterPeers(allPeers, bot.PublicKey),
 		})
 	} else if bot.Config.Name == "HypeWizard" {
 		log.Printf("🛠 Assigning ConductorProgram to [%s]", bot.Config.Name)
 
 		conductor := &programs.ConductorProgram{
-			MaxRunCount:   10,
-			ResponseDelay: 1,
-			Url:           bot.Config.ProgramConfig.Url,
+			ProgramConfig: bot.Config.ProgramConfig,
 			Peers:         filterPeers(allPeers, bot.PublicKey),
 		}
 
-		conductor.InitCrawlerClient(bot.Config.ProgramConfig.Address)
+		conductor.InitCrawlerClient(bot.Config.ProgramConfig.WorkerConfig.Address)
 		buffer = append(buffer, conductor)
 	}
 

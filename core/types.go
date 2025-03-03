@@ -30,3 +30,8 @@ const (
 	BotStartedEvent    EventType = "bot_started"
 	BotStoppedEvent    EventType = "bot_stopped"
 )
+
+type RemoteJob struct {
+	ChannelID string
+	Payload   string
+}

@@ -11,11 +11,14 @@ import (
 
 // **ChatterProgram** - Handles starting and responding
 type ChatterProgram struct {
-	MaxRunCount     int
-	Peers           []string
 	IsRunning       bool
-	Leader          bool
 	CurrentRunCount int
+
+	ProgramConfig core.ProgramConfig
+
+	Peers []string
+
+	Leader bool
 }
 
 // ✅ **Check if the program is active**
@@ -32,7 +35,7 @@ func (p *ChatterProgram) ShouldRun(message *core.OutgoingMessage) bool {
 func (p *ChatterProgram) Run(bot Bot, message *core.OutgoingMessage) string {
 	log.Printf("🏃 [%s] [ChatterProgram] [%d]", bot.GetPublicKey(), p.CurrentRunCount)
 
-	if p.CurrentRunCount >= p.MaxRunCount {
+	if p.CurrentRunCount >= p.ProgramConfig.MaxRunCount {
 		log.Printf("🛑 [%s] [ChatterProgram] reached max run count. Terminating...", bot.GetPublicKey())
 		p.IsRunning = false
 		return "🔴"

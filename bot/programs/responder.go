@@ -11,11 +11,12 @@ import (
 
 // **ResponderProgram** - Handles responding when mentioned
 type ResponderProgram struct {
-	MaxRunCount     int
-	CurrentRunCount int
-	ResponseDelay   int
 	IsRunning       bool
-	Peers           []string
+	CurrentRunCount int
+
+	ProgramConfig core.ProgramConfig
+
+	Peers []string
 }
 
 // ✅ **Check if the program is active**
@@ -32,7 +33,7 @@ func (p *ResponderProgram) ShouldRun(message *core.OutgoingMessage) bool {
 func (p *ResponderProgram) Run(bot Bot, message *core.OutgoingMessage) string {
 	log.Printf("🏃 [%s] [ResponderProgram] [%d]", bot.GetPublicKey(), p.CurrentRunCount)
 
-	if p.CurrentRunCount >= p.MaxRunCount {
+	if p.CurrentRunCount >= p.ProgramConfig.MaxRunCount {
 		log.Printf("🛑 [%s] [ResponderProgram] reached max run count. Terminating...", bot.GetPublicKey())
 		p.IsRunning = false
 		return "🔴"
@@ -71,7 +72,7 @@ func (p *ResponderProgram) Run(bot Bot, message *core.OutgoingMessage) string {
 	}
 	number++
 
-	time.Sleep(time.Duration(p.ResponseDelay) * time.Second)
+	time.Sleep(time.Duration(p.ProgramConfig.ResponseDelay) * time.Second)
 
 	encodedPublicKey, err = nip19.EncodePublicKey(message.SenderPublicKey)
 	if err != nil {
