@@ -14,7 +14,7 @@ import (
 type DMPublisher struct{}
 
 // Publish sends an encrypted direct message to the receiver
-func (publisher *DMPublisher) Broadcast(b *bot.BaseBot, message *core.OutgoingMessage) error {
+func (publisher *DMPublisher) Broadcast(b *bot.BaseBot, message *core.Message) error {
 	receiverPubKey := message.ReceiverPublicKey
 
 	sk := b.SecretKey
@@ -25,8 +25,10 @@ func (publisher *DMPublisher) Broadcast(b *bot.BaseBot, message *core.OutgoingMe
 		return err
 	}
 
+	content := message.Payload.Content
+
 	// Encrypt the message
-	encryptedMessage, err := nip04.Encrypt(message.Content, shared)
+	encryptedMessage, err := nip04.Encrypt(content, shared)
 	if err != nil {
 		log.Printf("❌ Failed to encrypt message: %v", err)
 		return err
@@ -59,6 +61,6 @@ func (publisher *DMPublisher) Broadcast(b *bot.BaseBot, message *core.OutgoingMe
 		return err
 	}
 
-	log.Printf("✉️ DM sent to %s: %s", receiverPubKey, message.Content)
+	log.Printf("✉️ DM sent to %s: %s", receiverPubKey, message.Payload)
 	return nil
 }

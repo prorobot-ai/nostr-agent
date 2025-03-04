@@ -27,12 +27,13 @@ func (p *ChatterProgram) IsActive() bool {
 }
 
 // ✅ **Determine if this should run**
-func (p *ChatterProgram) ShouldRun(message *core.OutgoingMessage) bool {
-	return (strings.Contains(message.Content, "🧮") && p.Leader) || p.IsRunning
+func (p *ChatterProgram) ShouldRun(message *core.Message) bool {
+	content := message.Payload.Content
+	return (strings.Contains(content, "🧮") && p.Leader) || p.IsRunning
 }
 
 // ✅ **Run Chatter Logic**
-func (p *ChatterProgram) Run(bot Bot, message *core.OutgoingMessage) string {
+func (p *ChatterProgram) Run(bot Bot, message *core.Message) string {
 	log.Printf("🏃 [%s] [ChatterProgram] [%d]", bot.GetPublicKey(), p.CurrentRunCount)
 
 	if p.CurrentRunCount >= p.ProgramConfig.MaxRunCount {
@@ -56,7 +57,7 @@ func (p *ChatterProgram) Run(bot Bot, message *core.OutgoingMessage) string {
 }
 
 // ✅ **Mention the next bot**
-func (p *ChatterProgram) startToMention(bot Bot, message *core.OutgoingMessage) {
+func (p *ChatterProgram) startToMention(bot Bot, message *core.Message) {
 	time.Sleep(time.Duration(p.CurrentRunCount) * time.Second)
 
 	receiver := bot.GetNextReceiver(p)
@@ -67,10 +68,14 @@ func (p *ChatterProgram) startToMention(bot Bot, message *core.OutgoingMessage) 
 		return
 	}
 
-	reply := &core.OutgoingMessage{
-		Content:           core.CreateContent("@"+encodedPublicKey+" 0", "message"),
+	reply := &core.Message{
 		ChannelID:         message.ChannelID,
 		ReceiverPublicKey: bot.GetPublicKey(),
+
+		Payload: core.ContentStructure{
+			Kind:    "message",
+			Content: core.CreateContent("@"+encodedPublicKey+" 0", "message"),
+		},
 	}
 
 	bot.Publish(reply)

@@ -14,11 +14,11 @@ type EventListener interface {
 }
 
 type EventHandler interface {
-	Subscribe(eventBus *EventBus)                // Subscribes to specific events
-	HandleMessage(message *core.OutgoingMessage) // Processes incoming messages
+	Subscribe(eventBus *EventBus)        // Subscribes to specific events
+	HandleMessage(message *core.Message) // Processes incoming messages
 }
 
 // Publisher defines how messages should be published
 type Publisher interface {
-	Broadcast(bot *BaseBot, message *core.OutgoingMessage) error // Publishes a message
+	Broadcast(bot *BaseBot, message *core.Message) error // Publishes a message
 }

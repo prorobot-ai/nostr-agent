@@ -25,12 +25,12 @@ func (p *ResponderProgram) IsActive() bool {
 }
 
 // ✅ **Should this program run?**
-func (p *ResponderProgram) ShouldRun(message *core.OutgoingMessage) bool {
+func (p *ResponderProgram) ShouldRun(message *core.Message) bool {
 	return true
 }
 
 // ✅ **Run Responder Logic**
-func (p *ResponderProgram) Run(bot Bot, message *core.OutgoingMessage) string {
+func (p *ResponderProgram) Run(bot Bot, message *core.Message) string {
 	log.Printf("🏃 [%s] [ResponderProgram] [%d]", bot.GetPublicKey(), p.CurrentRunCount)
 
 	if p.CurrentRunCount >= p.ProgramConfig.MaxRunCount {
@@ -46,7 +46,9 @@ func (p *ResponderProgram) Run(bot Bot, message *core.OutgoingMessage) string {
 
 	p.CurrentRunCount++
 
-	mention := core.ExtractMention(message.Content)
+	content := message.Payload.Content
+
+	mention := core.ExtractMention(content)
 	receiver := bot.GetPublicKey()
 
 	encodedPublicKey, err := nip19.EncodePublicKey(receiver)
@@ -59,7 +61,7 @@ func (p *ResponderProgram) Run(bot Bot, message *core.OutgoingMessage) string {
 		return "🟠 No valid mention"
 	}
 
-	words := core.SplitMessageContent(message.Content)
+	words := core.SplitMessageContent(content)
 	if len(words) < 2 {
 		log.Println("⚠️ Malformed message, missing number.")
 		return "🟠"
@@ -80,10 +82,14 @@ func (p *ResponderProgram) Run(bot Bot, message *core.OutgoingMessage) string {
 		return "🔴"
 	}
 
-	reply := &core.OutgoingMessage{
-		Content:           core.CreateContent("@"+encodedPublicKey+" "+strconv.Itoa(number), "message"),
+	reply := &core.Message{
 		ChannelID:         message.ChannelID,
 		ReceiverPublicKey: bot.GetPublicKey(),
+
+		Payload: core.ContentStructure{
+			Kind:    "message",
+			Content: core.CreateContent("@"+encodedPublicKey+" "+strconv.Itoa(number), "message"),
+		},
 	}
 
 	bot.Publish(reply)

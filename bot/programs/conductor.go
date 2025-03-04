@@ -34,12 +34,12 @@ func (p *ConductorProgram) IsActive() bool {
 }
 
 // ✅ **Should this program run?**
-func (p *ConductorProgram) ShouldRun(message *core.OutgoingMessage) bool {
+func (p *ConductorProgram) ShouldRun(message *core.Message) bool {
 	return true
 }
 
 // ✅ **Run Responder Logic**
-func (p *ConductorProgram) Run(bot Bot, message *core.OutgoingMessage) string {
+func (p *ConductorProgram) Run(bot Bot, message *core.Message) string {
 	log.Printf("🏃 [%s] [ConductorProgram] [%d]", bot.GetPublicKey(), p.CurrentRunCount)
 
 	if p.CurrentRunCount >= p.ProgramConfig.MaxRunCount {
@@ -55,7 +55,9 @@ func (p *ConductorProgram) Run(bot Bot, message *core.OutgoingMessage) string {
 
 	p.CurrentRunCount++
 
-	mention := core.ExtractMention(message.Content)
+	content := message.Payload.Content
+
+	mention := core.ExtractMention(content)
 	aliases := bot.GetAliases()
 	set := createSet(aliases)
 
@@ -63,7 +65,7 @@ func (p *ConductorProgram) Run(bot Bot, message *core.OutgoingMessage) string {
 		return "🟠 No valid mention"
 	}
 
-	words := core.SplitMessageContent(message.Content)
+	words := core.SplitMessageContent(content)
 	if len(words) < 2 {
 		log.Println("⚠️ Malformed message, missing number.")
 		return "🟠"
@@ -79,14 +81,20 @@ func (p *ConductorProgram) Run(bot Bot, message *core.OutgoingMessage) string {
 	// }
 
 	// GRPC
-	reply := &core.OutgoingMessage{
-		Content:           core.CreateContent("🧙🏻‍♂️ "+words[1]+" ⚡️", "message"),
+	reply := &core.Message{
 		ChannelID:         message.ChannelID,
 		ReceiverPublicKey: bot.GetPublicKey(),
+
+		Payload: core.ContentStructure{
+			Kind:     "message",
+			Metadata: message.Payload.Metadata,
+			Content:  core.CreateContent("🧙🏻‍♂️ "+words[1]+" ⚡️", "message"),
+		},
 	}
 
 	remoteJob := &core.RemoteJob{
 		ChannelID: message.ChannelID,
+		SessionID: message.Payload.Metadata,
 		Payload:   words[1],
 	}
 
@@ -123,7 +131,7 @@ func (p *ConductorProgram) StartWorkerJob(bot Bot, remoteJob core.RemoteJob) {
 
 	stream, err := p.CrawlerClient.StartCrawl(ctx, &pb.CrawlRequest{
 		Url:   remoteJob.Payload,
-		JobId: "job123",
+		JobId: remoteJob.SessionID,
 	})
 	if err != nil {
 		log.Fatalf("❌ Failed to start crawl: %v", err)
@@ -146,12 +154,12 @@ func handleWorkerResponse(stream pb.CrawlerService_StartCrawlClient, remoteJob c
 		}
 	} else {
 		// ✅ Forward crawl updates to WebSocket
-		forwardToWebSocket(stream, wsURL, remoteJob.ChannelID)
+		forwardToWebSocket(stream, wsURL, remoteJob)
 	}
 }
 
 // ✅ **Send gRPC responses to WebSocket (Short-Lived Session)**
-func forwardToWebSocket(stream pb.CrawlerService_StartCrawlClient, wsURL string, channelID string) {
+func forwardToWebSocket(stream pb.CrawlerService_StartCrawlClient, wsURL string, remoteJob core.RemoteJob) {
 	// 🔹 Establish WebSocket connection (Single Session)
 	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	if err != nil {
@@ -180,11 +188,12 @@ func forwardToWebSocket(stream pb.CrawlerService_StartCrawlClient, wsURL string,
 
 		log.Printf("🔄 Crawl Progress: %s", resp.Message)
 
-		// 🔹 Format WebSocket message
-		wsMessage := map[string]string{
-			"type":      "worker_update",
-			"channelId": channelID,
-			"text":      resp.Message,
+		wsMessage := core.SocketRequest{
+			Type:      "worker_update",
+			ChannelID: remoteJob.ChannelID,
+			Metadata:  remoteJob.SessionID,
+			Text:      resp.Message,
+			CreatedAt: time.Now().Unix(),
 		}
 
 		jsonMessage, _ := json.Marshal(wsMessage)

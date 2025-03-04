@@ -64,23 +64,23 @@ func (listener *GroupListener) StartListening(b *bot.BaseBot) {
 
 // ProcessEvent handles group channel messages
 func (listener *GroupListener) ProcessEvent(b *bot.BaseBot, event *nostr.Event) {
-	var message core.Message
+	var message core.ContentStructure
 	if err := json.Unmarshal([]byte(event.Content), &message); err != nil {
 		log.Printf("Failed to unmarshal message: %v", err)
 		return
 	}
 
-	b.EventBus.Publish(core.GroupMessageEvent, &core.OutgoingMessage{
+	b.EventBus.Publish(core.GroupMessageEvent, &core.Message{
 		ChannelID:         listener.ChannelID,
 		ReceiverPublicKey: b.PublicKey,
 		SenderPublicKey:   event.PubKey,
-		Content:           message.Content,
+		Payload:           message,
 	})
 
 	channelID := listener.ChannelID
 	channelID = channelID[len(channelID)-3:]
 
-	log.Printf("[%s] 👂 [%s]: %s", b.Config.Name, channelID, message.Content)
+	log.Printf("[%s] 👂 [%s]: %s", b.Config.Name, channelID, message)
 }
 
 func (listener *GroupListener) Filters(b *bot.BaseBot) []nostr.Filter {

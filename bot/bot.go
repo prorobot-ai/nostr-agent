@@ -115,7 +115,7 @@ func (bot *BaseBot) GetNextReceiver(program *programs.ChatterProgram) string {
 }
 
 // Publishes a message using the Publisher interface
-func (b *BaseBot) Publish(message *core.OutgoingMessage) {
+func (b *BaseBot) Publish(message *core.Message) {
 	b.Publisher.Broadcast(b, message)
 }
 
@@ -151,11 +151,11 @@ func (bot *BaseBot) ResetPrograms() {
 }
 
 // ExecutePrograms runs all active programs for a bot
-func (bot *BaseBot) ExecutePrograms(message *core.OutgoingMessage) {
+func (bot *BaseBot) ExecutePrograms(message *core.Message) {
 	bot.mu.Lock()
 	defer bot.mu.Unlock()
 
-	log.Printf("⚙️ [%s] Executing [%d] Programs on message: %s", bot.Config.Name, len(bot.Programs), message.Content)
+	log.Printf("⚙️ [%s] Executing [%d] Programs on message: %s", bot.Config.Name, len(bot.Programs), message.Payload)
 
 	var programsToRemove []int
 

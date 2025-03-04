@@ -76,7 +76,7 @@ func (listener *DMListener) ProcessEvent(b *bot.BaseBot, event *nostr.Event) {
 
 	log.Printf("🔓 Decrypted message: %s", plaintext)
 
-	var message core.Message
+	var message core.ContentStructure
 	if err := json.Unmarshal([]byte(plaintext), &message); err != nil {
 		log.Printf("❌ Failed to unmarshal message: %v", err)
 		return
@@ -85,9 +85,9 @@ func (listener *DMListener) ProcessEvent(b *bot.BaseBot, event *nostr.Event) {
 	log.Printf("💬 [DM from %s]: %s", npub, message.Content)
 
 	// 📩 Pass the event to EventBus
-	b.EventBus.Publish(core.DMMessageEvent, &core.OutgoingMessage{
+	b.EventBus.Publish(core.DMMessageEvent, &core.Message{
 		ReceiverPublicKey: event.PubKey,
-		Content:           message.Content,
+		Payload:           message,
 	})
 }
 

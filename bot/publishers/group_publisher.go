@@ -15,12 +15,15 @@ type GroupPublisher struct {
 	Handler   *handlers.GroupHandler
 }
 
-func (publisher *GroupPublisher) Broadcast(b *bot.BaseBot, message *core.OutgoingMessage) error {
+func (publisher *GroupPublisher) Broadcast(b *bot.BaseBot, message *core.Message) error {
+
+	content := message.Payload.Content
+
 	event := nostr.Event{
 		PubKey:    b.PublicKey,
 		CreatedAt: nostr.Now(),
 		Kind:      nostr.KindChannelMessage,
-		Content:   message.Content,
+		Content:   content,
 		Tags: nostr.Tags{
 			{"e", publisher.ChannelID, b.Relay.URL, "root"},
 		},
@@ -34,7 +37,7 @@ func (publisher *GroupPublisher) Broadcast(b *bot.BaseBot, message *core.Outgoin
 		groupID := publisher.ChannelID
 		groupID = groupID[len(groupID)-3:]
 
-		log.Printf("[%s] 🗣️ [%s] %s", b.Config.Name, groupID, message.Content)
+		log.Printf("[%s] 🗣️ [%s] %s", b.Config.Name, groupID, message.Payload)
 	}
 	return nil
 }

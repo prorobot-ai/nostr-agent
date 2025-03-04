@@ -20,13 +20,19 @@ func (h *WelcomeHandler) Subscribe(eventBus *bot.EventBus) {
 	h.EventBus.Subscribe(core.DMMessageEvent, h.HandleMessage)
 }
 
-func (h *WelcomeHandler) HandleMessage(message *core.OutgoingMessage) {
+func (h *WelcomeHandler) HandleMessage(message *core.Message) {
+	content := message.Payload.Content
+
 	switch {
-	case strings.Contains(message.Content, "I'm online."):
+	case strings.Contains(content, "I'm online."):
 		npub, _ := nip19.EncodePublicKey(message.ReceiverPublicKey)
-		reply := &core.OutgoingMessage{
-			Content:   core.CreateContent(npub, "subcriber"),
+
+		reply := &core.Message{
 			ChannelID: h.ChannelID,
+			Payload: core.ContentStructure{
+				Kind:    "message",
+				Content: core.CreateContent(npub, "subcriber"),
+			},
 		}
 		h.EventBus.Publish(core.GroupResponseEvent, reply)
 	}
