@@ -73,9 +73,9 @@ func (b *BaseBot) connectToRelay() error {
 	b.Relay = relay
 	// 📝 Check if there are aliases before logging them
 	if len(b.Config.Aliases) > 0 {
-		log.Printf("✅ [%s] %v Connected 📡 Aliases: %s", b.Config.Name, b.Config.Aliases, b.RelayURL)
+		log.Printf("📡 [%s] %v connected to [%s] ✅ ", b.Config.Name, b.Config.Aliases, b.RelayURL)
 	} else {
-		log.Printf("✅ [%s] Connected 📡 [%s]", b.Config.Name, b.RelayURL)
+		log.Printf("📡 [%s] connected to [%s] ✅ ", b.Config.Name, b.RelayURL)
 	}
 	return nil
 }
@@ -130,7 +130,7 @@ func (bot *BaseBot) AssignPrograms(p []programs.BotProgram) {
 	// ✅ Expand slice `p` into individual elements
 	bot.Programs = append(bot.Programs, p...)
 
-	log.Printf("🧮 [%s] Assigned [%d] programs", bot.Config.Name, len(p))
+	log.Printf("🧮 [%s] received [%d] programs ✅", bot.Config.Name, len(p))
 }
 
 func (bot *BaseBot) RemoveProgram(p programs.BotProgram) {

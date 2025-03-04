@@ -25,7 +25,7 @@ func (h *ExchangeHandler) Subscribe(eventBus *bot.EventBus) {
 	h.EventBus = eventBus
 	h.encodedPublicKey, _ = nip19.EncodePublicKey(h.Bot.PublicKey)
 
-	log.Printf("✅ Subscribed 🚌 [%s]", h.Bot.Config.Name)
+	log.Printf("🚎 [%s] Subscribed ✅", h.Bot.Config.Name)
 	h.EventBus.Subscribe(core.GroupMessageEvent, h.HandleMessage)
 }
 

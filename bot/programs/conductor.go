@@ -88,7 +88,7 @@ func (p *ConductorProgram) Run(bot Bot, message *core.Message) string {
 		Payload: core.ContentStructure{
 			Kind:     "message",
 			Metadata: message.Payload.Metadata,
-			Content:  core.CreateContent("🧙🏻‍♂️ "+words[1]+" ⚡️", "message"),
+			Content:  core.CreateContent("🧙🏻‍♂️⚡️ finished hyping "+words[1]+".", "message"),
 		},
 	}
 
@@ -148,6 +148,7 @@ func handleWorkerResponse(stream pb.CrawlerService_StartCrawlClient, remoteJob c
 		for {
 			resp, err := stream.Recv()
 			if err != nil {
+				log.Printf("❌ Failed to connect to stream: %v", err)
 				break
 			}
 			log.Printf("🔄 Worker Progress: %s", resp.Message)

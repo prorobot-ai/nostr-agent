@@ -40,20 +40,20 @@ func (m *BotManager) InitializePrograms(bot *BaseBot) {
 	}
 
 	if bot.Config.Name == "Yin" {
-		log.Printf("🛠 Assigning ChatterProgram to [%s]", bot.Config.Name)
+		log.Printf("🔌 Attaching [ChatterProgram] to [%s] ✅", bot.Config.Name)
 		buffer = append(buffer, &programs.ChatterProgram{
 			ProgramConfig: bot.Config.ProgramConfig,
 			Leader:        true,
 			Peers:         filterPeers(allPeers, bot.PublicKey),
 		})
 	} else if bot.Config.Name == "Yang" {
-		log.Printf("🛠 Assigning ResponderProgram to [%s]", bot.Config.Name)
+		log.Printf("🔌 Attaching [ResponderProgram] to [%s] ✅", bot.Config.Name)
 		buffer = append(buffer, &programs.ResponderProgram{
 			ProgramConfig: bot.Config.ProgramConfig,
 			Peers:         filterPeers(allPeers, bot.PublicKey),
 		})
 	} else if bot.Config.Name == "HypeWizard" {
-		log.Printf("🛠 Assigning ConductorProgram to [%s]", bot.Config.Name)
+		log.Printf("🔌 Attaching [ConductorProgram] to [%s] ✅", bot.Config.Name)
 
 		conductor := &programs.ConductorProgram{
 			ProgramConfig: bot.Config.ProgramConfig,

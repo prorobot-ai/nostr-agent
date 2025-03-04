@@ -53,7 +53,7 @@ func (listener *DMListener) StartListening(b *bot.BaseBot) {
 				storedEvents = nil
 				processingStoredEvents = true
 				b.IsActiveListener = true
-				log.Println("🚀 Entered active listening mode")
+				log.Printf("👂 [%s] listening ", b.Config.Name)
 			}
 		case <-relay.Context().Done():
 			listener.HandleConnectionLoss(b)
