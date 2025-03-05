@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -12,20 +14,15 @@ import (
 	pb "github.com/prorobot-ai/grpc-protos/gen/crawler"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	"github.com/gorilla/websocket"
 )
 
-// **ConductorProgram** - Handles responding when mentioned
+// ConductorProgram handles responses when mentioned
 type ConductorProgram struct {
 	IsRunning       bool
 	CurrentRunCount int
-
-	ProgramConfig core.ProgramConfig
-
-	Peers []string
-
-	CrawlerClient pb.CrawlerServiceClient
+	ProgramConfig   core.ProgramConfig
+	Peers           []string
+	CrawlerClient   pb.CrawlerServiceClient
 }
 
 // ✅ **Check if the program is active**
@@ -56,7 +53,6 @@ func (p *ConductorProgram) Run(bot Bot, message *core.Message) string {
 	p.CurrentRunCount++
 
 	content := message.Payload.Content
-
 	mention := core.ExtractMention(content)
 	aliases := bot.GetAliases()
 	set := createSet(aliases)
@@ -73,18 +69,9 @@ func (p *ConductorProgram) Run(bot Bot, message *core.Message) string {
 
 	time.Sleep(time.Duration(p.ProgramConfig.ResponseDelay) * time.Second)
 
-	// HTTP
-	// err := sendJobRequest(p.Url, words[1]) // send the request to jobs service
-	// if err != nil {
-	// 	log.Printf("❌ Error sending job: %v", err)
-	// 	return "🔴"
-	// }
-
-	// GRPC
 	reply := &core.Message{
 		ChannelID:         message.ChannelID,
 		ReceiverPublicKey: bot.GetPublicKey(),
-
 		Payload: core.ContentStructure{
 			Kind:     "message",
 			Metadata: message.Payload.Metadata,
@@ -99,7 +86,6 @@ func (p *ConductorProgram) Run(bot Bot, message *core.Message) string {
 	}
 
 	p.StartWorkerJob(bot, *remoteJob)
-
 	bot.Publish(reply)
 
 	return "🟢"
@@ -108,7 +94,7 @@ func (p *ConductorProgram) Run(bot Bot, message *core.Message) string {
 // ✅ **Initialize gRPC Client in the Program**
 func (p *ConductorProgram) InitCrawlerClient(serverAddr string) {
 	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()), // Use insecure connection (change for TLS)
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
 	conn, err := grpc.NewClient(serverAddr, opts...)
@@ -129,85 +115,96 @@ func (p *ConductorProgram) StartWorkerJob(bot Bot, remoteJob core.RemoteJob) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// ✅ Initialize Notifier
+	var notifier core.Notifier
+	if p.ProgramConfig.HubConfig.Socket != "" {
+		wsNotifier, err := core.NewWebSocketNotifier(p.ProgramConfig.HubConfig.Socket)
+		if err != nil {
+			log.Println("❌ WebSocket unavailable, falling back to Logger")
+			notifier = &core.LoggerNotifier{}
+		} else {
+			notifier = wsNotifier
+		}
+	} else {
+		notifier = &core.LoggerNotifier{}
+	}
+
+	// ✅ Start Crawl Job
 	stream, err := p.CrawlerClient.StartCrawl(ctx, &pb.CrawlRequest{
 		Url:   remoteJob.Payload,
 		JobId: remoteJob.SessionID,
 	})
 	if err != nil {
-		log.Fatalf("❌ Failed to start crawl: %v", err)
-	}
-
-	// ✅ Handle response (WebSocket or direct logs)
-	handleWorkerResponse(stream, remoteJob, p.ProgramConfig.HubConfig.Socket)
-}
-
-// ✅ **Handles gRPC Crawl Response**
-func handleWorkerResponse(stream pb.CrawlerService_StartCrawlClient, remoteJob core.RemoteJob, wsURL string) {
-	if wsURL == "" {
-		// ✅ Log crawl updates if no WebSocket is configured
-		for {
-			resp, err := stream.Recv()
-			if err != nil {
-				log.Printf("❌ Failed to connect to stream: %v", err)
-				break
-			}
-			log.Printf("🔄 Worker Progress: %s", resp.Message)
-		}
-	} else {
-		// ✅ Forward crawl updates to WebSocket
-		forwardToWebSocket(stream, wsURL, remoteJob)
-	}
-}
-
-// ✅ **Send gRPC responses to WebSocket (Short-Lived Session)**
-func forwardToWebSocket(stream pb.CrawlerService_StartCrawlClient, wsURL string, remoteJob core.RemoteJob) {
-	// 🔹 Establish WebSocket connection (Single Session)
-	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
-	if err != nil {
-		log.Printf("❌ Failed to connect to WebSocket: %v", err)
+		notifier.SendMessage(core.SocketRequest{
+			Type:      "error",
+			ChannelID: remoteJob.ChannelID,
+			Metadata:  remoteJob.SessionID,
+			Text:      "Failed to start crawl: " + err.Error(),
+			CreatedAt: time.Now().Unix(),
+		})
 		return
 	}
-	defer func() {
-		log.Println("🔴 Closing WebSocket connection")
-		conn.Close()
-	}()
 
-	log.Println("✅ WebSocket connection established:", wsURL)
+	// ✅ Handle Response
+	handleWorkerResponse(bot, stream, remoteJob, notifier)
+}
 
-	conn.SetPongHandler(func(appData string) error {
-		log.Println("✅ Pong received, client is alive")
-		return nil
-	})
-
-	// 🔹 Read gRPC stream and send each message to WebSocket
+// ✅ **Handles gRPC Crawl Response via Notifier**
+func handleWorkerResponse(bot Bot, stream pb.CrawlerService_StartCrawlClient, remoteJob core.RemoteJob, notifier core.Notifier) {
 	for {
 		resp, err := stream.Recv()
 		if err != nil {
-			log.Printf("❌ gRPC Stream Closed: %v", err)
-			break // ✅ No retry needed, just exit
+			// ✅ Check if stream closed unexpectedly
+			if err == io.EOF {
+				log.Println("✅ gRPC Stream reached EOF gracefully")
+			} else {
+				log.Printf("❌ gRPC Stream Closed Unexpectedly: %v", err)
+			}
+			break
 		}
 
-		log.Printf("🔄 Crawl Progress: %s", resp.Message)
+		log.Printf("🔄 Worker Progress: %s", resp.Message)
 
-		wsMessage := core.SocketRequest{
+		notifier.SendMessage(core.SocketRequest{
 			Type:      "worker_update",
 			ChannelID: remoteJob.ChannelID,
 			Metadata:  remoteJob.SessionID,
 			Text:      resp.Message,
 			CreatedAt: time.Now().Unix(),
-		}
-
-		jsonMessage, _ := json.Marshal(wsMessage)
-
-		// 🔹 Send message to WebSocket
-		err = conn.WriteMessage(websocket.TextMessage, jsonMessage)
-		if err != nil {
-			log.Printf("❌ Failed to send message to WebSocket: %v", err)
-			break // ✅ Exit without retry
-		}
+		})
 	}
 
-	log.Println("🔴 WebSocket session closed gracefully")
+	// ✅ Ensure WebSocket remains open until messages are fully processed
+	log.Println("✅ Sending worker_done now...")
+	notifier.SendMessage(core.SocketRequest{
+		Type:      "agent_update",
+		ChannelID: remoteJob.ChannelID,
+		Metadata:  remoteJob.SessionID,
+		Text:      fmt.Sprintf("[%s] exiting program.", bot.GetName()),
+		CreatedAt: time.Now().Unix(),
+	})
+
+	// ✅ Small delay to ensure WebSocket sends this message
+	time.Sleep(500 * time.Millisecond)
+
+	// ✅ Ensure gRPC stream fully closes before sending `clear_status`
+	log.Println("✅ Waiting for gRPC shutdown to complete...")
+	time.Sleep(500 * time.Millisecond) // Allow last message to flush
+
+	log.Println("✅ Sending agent_done now...")
+	notifier.SendMessage(core.SocketRequest{
+		Type:      "agent_done",
+		ChannelID: remoteJob.ChannelID,
+		Metadata:  remoteJob.SessionID,
+		Text:      "",
+		CreatedAt: time.Now().Unix(),
+	})
+
+	// ✅ Final delay before closing WebSocket
+	time.Sleep(500 * time.Millisecond)
+
+	// ✅ Now we can safely close the WebSocket
+	notifier.Close()
 }
 
 type JobRequest struct {

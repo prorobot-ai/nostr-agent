@@ -11,6 +11,7 @@ type BotProgram interface {
 
 // **Bot** allows programs to interact with any bot
 type Bot interface {
+	GetName() string
 	GetAliases() []string
 	GetPublicKey() string
 	GetNextReceiver(p *ChatterProgram) string

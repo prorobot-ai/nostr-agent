@@ -92,6 +92,10 @@ func (b *BaseBot) Stop() {
 // ============================================================
 // 🎛️ Bot interface implementations
 // ============================================================
+func (b *BaseBot) GetName() string {
+	return b.Config.Name
+}
+
 func (b *BaseBot) GetAliases() []string {
 	return b.Config.Aliases
 }
