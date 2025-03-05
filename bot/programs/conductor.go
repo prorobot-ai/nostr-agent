@@ -69,16 +69,6 @@ func (p *ConductorProgram) Run(bot Bot, message *core.Message) string {
 
 	time.Sleep(time.Duration(p.ProgramConfig.ResponseDelay) * time.Second)
 
-	reply := &core.Message{
-		ChannelID:         message.ChannelID,
-		ReceiverPublicKey: bot.GetPublicKey(),
-		Payload: core.ContentStructure{
-			Kind:     "message",
-			Metadata: message.Payload.Metadata,
-			Content:  core.CreateContent("🧙🏻‍♂️⚡️ finished hyping "+words[1]+".", "message"),
-		},
-	}
-
 	remoteJob := &core.RemoteJob{
 		ChannelID: message.ChannelID,
 		SessionID: message.Payload.Metadata,
@@ -86,7 +76,6 @@ func (p *ConductorProgram) Run(bot Bot, message *core.Message) string {
 	}
 
 	p.StartWorkerJob(bot, *remoteJob)
-	bot.Publish(reply)
 
 	return "🟢"
 }
@@ -146,11 +135,12 @@ func (p *ConductorProgram) StartWorkerJob(bot Bot, remoteJob core.RemoteJob) {
 	}
 
 	// ✅ Handle Response
-	handleWorkerResponse(bot, stream, remoteJob, notifier)
+	p.handleWorkerResponse(bot, stream, remoteJob, notifier)
 }
 
 // ✅ **Handles gRPC Crawl Response via Notifier**
-func handleWorkerResponse(bot Bot, stream pb.CrawlerService_StartCrawlClient, remoteJob core.RemoteJob, notifier core.Notifier) {
+func (p *ConductorProgram) handleWorkerResponse(bot Bot, stream pb.CrawlerService_StartCrawlClient, remoteJob core.RemoteJob, notifier core.Notifier) {
+	var jobID string
 	for {
 		resp, err := stream.Recv()
 		if err != nil {
@@ -163,7 +153,9 @@ func handleWorkerResponse(bot Bot, stream pb.CrawlerService_StartCrawlClient, re
 			break
 		}
 
-		log.Printf("🔄 Worker Progress: %s", resp.Message)
+		log.Printf("🔄 Worker Job [%s] Progress: %s", resp.JobId, resp.Message)
+
+		jobID = resp.JobId
 
 		notifier.SendMessage(core.SocketRequest{
 			Type:      "worker_update",
@@ -202,6 +194,21 @@ func handleWorkerResponse(bot Bot, stream pb.CrawlerService_StartCrawlClient, re
 
 	// ✅ Final delay before closing WebSocket
 	time.Sleep(500 * time.Millisecond)
+
+	url := fmt.Sprintf("%s/%s", p.ProgramConfig.CallbackUrl, jobID)
+	message := fmt.Sprintf("🧙🏻‍♂️⚡️ Finished. See report @ %s.", url)
+
+	reply := &core.Message{
+		ChannelID:         remoteJob.ChannelID,
+		ReceiverPublicKey: bot.GetPublicKey(),
+		Payload: core.ContentStructure{
+			Kind:     "message",
+			Metadata: remoteJob.SessionID,
+			Content:  core.CreateContent(message, "message"),
+		},
+	}
+
+	bot.Publish(reply)
 
 	// ✅ Now we can safely close the WebSocket
 	notifier.Close()
