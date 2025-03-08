@@ -31,7 +31,7 @@ func (h *WelcomeHandler) HandleMessage(message *core.Message) {
 			ChannelID: h.ChannelID,
 			Payload: core.ContentStructure{
 				Kind:    "message",
-				Content: core.CreateContent(npub, "subcriber"),
+				Content: core.CreateContent(npub, "subscriber"),
 			},
 		}
 		h.EventBus.Publish(core.GroupResponseEvent, reply)
