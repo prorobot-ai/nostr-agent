@@ -52,8 +52,8 @@ func (p *ConductorProgram) Run(bot Bot, message *core.Message) string {
 
 	p.CurrentRunCount++
 
-	content := message.Payload.Content
-	mention := core.ExtractMention(content)
+	text := message.Payload.Text
+	mention := core.ExtractMention(text)
 	aliases := bot.GetAliases()
 	set := createSet(aliases)
 
@@ -61,7 +61,7 @@ func (p *ConductorProgram) Run(bot Bot, message *core.Message) string {
 		return "🟠 No valid mention"
 	}
 
-	words := core.SplitMessageContent(content)
+	words := core.SplitMessageContent(text)
 	if len(words) < 2 {
 		log.Println("⚠️ Malformed message, missing number.")
 		return "🟠"
@@ -204,7 +204,7 @@ func (p *ConductorProgram) handleWorkerResponse(bot Bot, stream pb.CrawlerServic
 		Payload: core.ContentStructure{
 			Kind:     "message",
 			Metadata: remoteJob.SessionID,
-			Content:  core.CreateContent(message, "message"),
+			Text:     core.CreateContent(message, "message"),
 		},
 	}
 

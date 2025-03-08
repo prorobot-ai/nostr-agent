@@ -1,7 +1,7 @@
 package core
 
 type ContentStructure struct {
-	Content  string `json:"content"`
+	Text     string `json:"content"`
 	Kind     string `json:"kind"`
 	Metadata string `json:"metadata,omitempty"`
 }

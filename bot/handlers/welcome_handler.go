@@ -22,17 +22,17 @@ func (h *WelcomeHandler) Subscribe(eventBus *bot.EventBus) {
 }
 
 func (h *WelcomeHandler) HandleMessage(message *core.Message) {
-	content := message.Payload.Content
+	text := message.Payload.Text
 
 	switch {
-	case strings.Contains(content, "I'm online."):
+	case strings.Contains(text, "I'm online."):
 		npub, _ := nip19.EncodePublicKey(message.ReceiverPublicKey)
 
 		reply := &core.Message{
 			ChannelID: h.ChannelID,
 			Payload: core.ContentStructure{
-				Kind:    "message",
-				Content: core.CreateContent(npub, "subscriber"),
+				Kind: "message",
+				Text: core.CreateContent(npub, "subscriber"),
 			},
 		}
 

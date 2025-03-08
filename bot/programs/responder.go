@@ -46,9 +46,9 @@ func (p *ResponderProgram) Run(bot Bot, message *core.Message) string {
 
 	p.CurrentRunCount++
 
-	content := message.Payload.Content
+	text := message.Payload.Text
 
-	mention := core.ExtractMention(content)
+	mention := core.ExtractMention(text)
 	receiver := bot.GetPublicKey()
 
 	encodedPublicKey, err := nip19.EncodePublicKey(receiver)
@@ -61,7 +61,7 @@ func (p *ResponderProgram) Run(bot Bot, message *core.Message) string {
 		return "🟠 No valid mention"
 	}
 
-	words := core.SplitMessageContent(content)
+	words := core.SplitMessageContent(text)
 	if len(words) < 2 {
 		log.Println("⚠️ Malformed message, missing number.")
 		return "🟠"
@@ -87,8 +87,8 @@ func (p *ResponderProgram) Run(bot Bot, message *core.Message) string {
 		ReceiverPublicKey: bot.GetPublicKey(),
 
 		Payload: core.ContentStructure{
-			Kind:    "message",
-			Content: core.CreateContent("@"+encodedPublicKey+" "+strconv.Itoa(number), "message"),
+			Kind: "message",
+			Text: core.CreateContent("@"+encodedPublicKey+" "+strconv.Itoa(number), "message"),
 		},
 	}
 

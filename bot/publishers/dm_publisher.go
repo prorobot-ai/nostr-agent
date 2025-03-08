@@ -25,10 +25,10 @@ func (publisher *DMPublisher) Broadcast(b *bot.BaseBot, message *core.Message) e
 		return err
 	}
 
-	content := message.Payload.Content
+	text := message.Payload.Text
 
 	// Encrypt the message
-	encryptedMessage, err := nip04.Encrypt(content, shared)
+	encryptedMessage, err := nip04.Encrypt(text, shared)
 	if err != nil {
 		log.Printf("❌ Failed to encrypt message: %v", err)
 		return err

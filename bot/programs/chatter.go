@@ -28,8 +28,8 @@ func (p *ChatterProgram) IsActive() bool {
 
 // ✅ **Determine if this should run**
 func (p *ChatterProgram) ShouldRun(message *core.Message) bool {
-	content := message.Payload.Content
-	return (strings.Contains(content, "🧮") && p.Leader) || p.IsRunning
+	text := message.Payload.Text
+	return (strings.Contains(text, "🧮") && p.Leader) || p.IsRunning
 }
 
 // ✅ **Run Chatter Logic**
@@ -73,8 +73,8 @@ func (p *ChatterProgram) startToMention(bot Bot, message *core.Message) {
 		ReceiverPublicKey: bot.GetPublicKey(),
 
 		Payload: core.ContentStructure{
-			Kind:    "message",
-			Content: core.CreateContent("@"+encodedPublicKey+" 0", "message"),
+			Kind: "message",
+			Text: core.CreateContent("@"+encodedPublicKey+" 0", "message"),
 		},
 	}
 

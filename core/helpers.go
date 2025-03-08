@@ -9,8 +9,8 @@ import (
 // 🛠️ Convert structured content to JSON string
 func CreateContent(text string, kind string) string {
 	message := ContentStructure{
-		Content: text,
-		Kind:    kind,
+		Text: text,
+		Kind: kind,
 	}
 
 	jsonData, err := json.Marshal(message)

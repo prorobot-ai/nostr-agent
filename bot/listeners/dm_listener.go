@@ -82,7 +82,7 @@ func (listener *DMListener) ProcessEvent(b *bot.BaseBot, event *nostr.Event) {
 		return
 	}
 
-	log.Printf("💬 [DM from %s]: %s", npub, message.Content)
+	log.Printf("💬 [DM from %s]: %s", npub, message.Text)
 
 	// 📩 Pass the event to EventBus
 	b.EventBus.Publish(core.DMMessageEvent, &core.Message{

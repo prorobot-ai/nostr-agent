@@ -17,13 +17,13 @@ type GroupPublisher struct {
 
 func (publisher *GroupPublisher) Broadcast(b *bot.BaseBot, message *core.Message) error {
 
-	content := message.Payload.Content
+	text := message.Payload.Text
 
 	event := nostr.Event{
 		PubKey:    b.PublicKey,
 		CreatedAt: nostr.Now(),
 		Kind:      nostr.KindChannelMessage,
-		Content:   content,
+		Content:   text,
 		Tags: nostr.Tags{
 			{"e", publisher.ChannelID, b.Relay.URL, "root"},
 		},

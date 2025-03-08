@@ -20,39 +20,39 @@ func (h *SupportHandler) Subscribe(eventBus *bot.EventBus) {
 }
 
 func (h *SupportHandler) HandleMessage(message *core.Message) {
-	content := message.Payload.Content
+	text := message.Payload.Text
 
 	switch {
-	case strings.Contains(content, "!ping"):
-		reply := &core.Message{
-			ReceiverPublicKey: message.ReceiverPublicKey,
-			Payload: core.ContentStructure{
-				Kind:    "message",
-				Content: "🏓 Pong! I'm alive.",
-			},
-		}
-		time.Sleep(time.Second)
-		h.EventBus.Publish(core.DMResponseEvent, reply)
-
-	case strings.Contains(content, "I'm online."):
-		reply := &core.Message{
-			ReceiverPublicKey: message.ReceiverPublicKey,
-			Payload: core.ContentStructure{
-				Kind:    "message",
-				Content: "👋 Welcome to Dispatch! Let us know if you need any assistance.",
-			},
-		}
-		time.Sleep(time.Second)
-		h.EventBus.Publish(core.DMResponseEvent, reply)
-
-	case strings.Contains(content, "Hi, I would like to report "):
+	case strings.Contains(text, "!ping"):
 		reply := &core.Message{
 			ReceiverPublicKey: message.ReceiverPublicKey,
 			Payload: core.ContentStructure{
 				Kind: "message",
-				Content: fmt.Sprintf(
+				Text: "🏓 Pong! I'm alive.",
+			},
+		}
+		time.Sleep(time.Second)
+		h.EventBus.Publish(core.DMResponseEvent, reply)
+
+	case strings.Contains(text, "I'm online."):
+		reply := &core.Message{
+			ReceiverPublicKey: message.ReceiverPublicKey,
+			Payload: core.ContentStructure{
+				Kind: "message",
+				Text: "👋 Welcome to Dispatch! Let us know if you need any assistance.",
+			},
+		}
+		time.Sleep(time.Second)
+		h.EventBus.Publish(core.DMResponseEvent, reply)
+
+	case strings.Contains(text, "Hi, I would like to report "):
+		reply := &core.Message{
+			ReceiverPublicKey: message.ReceiverPublicKey,
+			Payload: core.ContentStructure{
+				Kind: "message",
+				Text: fmt.Sprintf(
 					"Could you elaborate on the problem you're encountering with %s? Additional details would greatly assist in resolving your issue. In the meanwhile, feel free to mute the user if that's necessary.",
-					h.ExtractUsername(content),
+					h.ExtractUsername(text),
 				),
 			},
 		}
