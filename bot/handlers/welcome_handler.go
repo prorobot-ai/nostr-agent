@@ -5,6 +5,7 @@ import (
 	"agent/core"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/nbd-wtf/go-nostr/nip19"
 )
@@ -34,6 +35,8 @@ func (h *WelcomeHandler) HandleMessage(message *core.Message) {
 				Content: core.CreateContent(npub, "subscriber"),
 			},
 		}
+
+		time.Sleep(time.Second)
 		h.EventBus.Publish(core.GroupResponseEvent, reply)
 	}
 }

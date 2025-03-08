@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 )
 
 type SupportHandler struct {
@@ -30,6 +31,7 @@ func (h *SupportHandler) HandleMessage(message *core.Message) {
 				Content: "🏓 Pong! I'm alive.",
 			},
 		}
+		time.Sleep(time.Second)
 		h.EventBus.Publish(core.DMResponseEvent, reply)
 
 	case strings.Contains(content, "I'm online."):
@@ -40,6 +42,7 @@ func (h *SupportHandler) HandleMessage(message *core.Message) {
 				Content: "👋 Welcome to Dispatch! Let us know if you need any assistance.",
 			},
 		}
+		time.Sleep(time.Second)
 		h.EventBus.Publish(core.DMResponseEvent, reply)
 
 	case strings.Contains(content, "Hi, I would like to report "):
@@ -53,6 +56,7 @@ func (h *SupportHandler) HandleMessage(message *core.Message) {
 				),
 			},
 		}
+		time.Sleep(time.Second)
 		h.EventBus.Publish(core.DMResponseEvent, reply)
 	}
 }

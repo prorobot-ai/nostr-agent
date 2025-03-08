@@ -6,6 +6,7 @@ import (
 	"agent/services/weather"
 	"log"
 	"strings"
+	"time"
 )
 
 type GroupHandler struct {
@@ -33,6 +34,8 @@ func (h *GroupHandler) HandleMessage(message *core.Message) {
 				Content: core.CreateContent(weatherReport, "message"),
 			},
 		}
+
+		time.Sleep(time.Second)
 		h.EventBus.Publish(core.GroupResponseEvent, reply)
 	}
 }
