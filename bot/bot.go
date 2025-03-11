@@ -119,7 +119,7 @@ func (bot *BaseBot) GetNextReceiver(program *programs.ChatterProgram) string {
 }
 
 // Publishes a message using the Publisher interface
-func (b *BaseBot) Publish(message *core.Message) {
+func (b *BaseBot) Publish(message *core.BusMessage) {
 	b.Publisher.Broadcast(b, message)
 }
 
@@ -155,7 +155,7 @@ func (bot *BaseBot) ResetPrograms() {
 }
 
 // ExecutePrograms runs all active programs for a bot
-func (bot *BaseBot) ExecutePrograms(message *core.Message) {
+func (bot *BaseBot) ExecutePrograms(message *core.BusMessage) {
 	bot.mu.Lock()
 	defer bot.mu.Unlock()
 

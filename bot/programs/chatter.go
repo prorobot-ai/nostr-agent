@@ -27,13 +27,13 @@ func (p *ChatterProgram) IsActive() bool {
 }
 
 // ✅ **Determine if this should run**
-func (p *ChatterProgram) ShouldRun(message *core.Message) bool {
+func (p *ChatterProgram) ShouldRun(message *core.BusMessage) bool {
 	text := message.Payload.Text
 	return (strings.Contains(text, "🧮") && p.Leader) || p.IsRunning
 }
 
 // ✅ **Run Chatter Logic**
-func (p *ChatterProgram) Run(bot Bot, message *core.Message) string {
+func (p *ChatterProgram) Run(bot Bot, message *core.BusMessage) string {
 	log.Printf("🏃 [%s] [ChatterProgram] [%d]", bot.GetPublicKey(), p.CurrentRunCount)
 
 	if p.CurrentRunCount >= p.ProgramConfig.MaxRunCount {
@@ -57,7 +57,7 @@ func (p *ChatterProgram) Run(bot Bot, message *core.Message) string {
 }
 
 // ✅ **Mention the next bot**
-func (p *ChatterProgram) startToMention(bot Bot, message *core.Message) {
+func (p *ChatterProgram) startToMention(bot Bot, message *core.BusMessage) {
 	time.Sleep(time.Duration(p.CurrentRunCount) * time.Second)
 
 	receiver := bot.GetNextReceiver(p)
@@ -68,13 +68,13 @@ func (p *ChatterProgram) startToMention(bot Bot, message *core.Message) {
 		return
 	}
 
-	reply := &core.Message{
+	reply := &core.BusMessage{
 		ChannelID:         message.ChannelID,
 		ReceiverPublicKey: bot.GetPublicKey(),
 
 		Payload: core.ContentStructure{
 			Kind: "message",
-			Text: core.CreateContent("@"+encodedPublicKey+" 0", "message"),
+			Text: core.SerializeContent("@"+encodedPublicKey+" 0", "message"),
 		},
 	}
 

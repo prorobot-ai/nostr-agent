@@ -31,12 +31,12 @@ func (p *ConductorProgram) IsActive() bool {
 }
 
 // ✅ **Should this program run?**
-func (p *ConductorProgram) ShouldRun(message *core.Message) bool {
+func (p *ConductorProgram) ShouldRun(message *core.BusMessage) bool {
 	return true
 }
 
 // ✅ **Run Responder Logic**
-func (p *ConductorProgram) Run(bot Bot, message *core.Message) string {
+func (p *ConductorProgram) Run(bot Bot, message *core.BusMessage) string {
 	log.Printf("🏃 [%s] [ConductorProgram] [%d]", bot.GetPublicKey(), p.CurrentRunCount)
 
 	if p.CurrentRunCount >= p.ProgramConfig.MaxRunCount {
@@ -198,13 +198,13 @@ func (p *ConductorProgram) handleWorkerResponse(bot Bot, stream pb.CrawlerServic
 	url := fmt.Sprintf("%s/%s", p.ProgramConfig.CallbackUrl, jobID)
 	message := fmt.Sprintf("🧙🏻‍♂️⚡️ Finished. See report @ %s.", url)
 
-	reply := &core.Message{
+	reply := &core.BusMessage{
 		ChannelID:         remoteJob.ChannelID,
 		ReceiverPublicKey: bot.GetPublicKey(),
 		Payload: core.ContentStructure{
 			Kind:     "message",
 			Metadata: remoteJob.SessionID,
-			Text:     core.CreateContent(message, "message"),
+			Text:     core.SerializeContent(message, "message"),
 		},
 	}
 

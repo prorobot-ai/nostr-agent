@@ -25,12 +25,12 @@ func (p *ResponderProgram) IsActive() bool {
 }
 
 // ✅ **Should this program run?**
-func (p *ResponderProgram) ShouldRun(message *core.Message) bool {
+func (p *ResponderProgram) ShouldRun(message *core.BusMessage) bool {
 	return true
 }
 
 // ✅ **Run Responder Logic**
-func (p *ResponderProgram) Run(bot Bot, message *core.Message) string {
+func (p *ResponderProgram) Run(bot Bot, message *core.BusMessage) string {
 	log.Printf("🏃 [%s] [ResponderProgram] [%d]", bot.GetPublicKey(), p.CurrentRunCount)
 
 	if p.CurrentRunCount >= p.ProgramConfig.MaxRunCount {
@@ -82,13 +82,13 @@ func (p *ResponderProgram) Run(bot Bot, message *core.Message) string {
 		return "🔴"
 	}
 
-	reply := &core.Message{
+	reply := &core.BusMessage{
 		ChannelID:         message.ChannelID,
 		ReceiverPublicKey: bot.GetPublicKey(),
 
 		Payload: core.ContentStructure{
 			Kind: "message",
-			Text: core.CreateContent("@"+encodedPublicKey+" "+strconv.Itoa(number), "message"),
+			Text: core.SerializeContent("@"+encodedPublicKey+" "+strconv.Itoa(number), "message"),
 		},
 	}
 

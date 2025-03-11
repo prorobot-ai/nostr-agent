@@ -20,18 +20,18 @@ func (h *GroupHandler) Subscribe(eventBus *bot.EventBus) {
 	h.EventBus.Subscribe(core.GroupMessageEvent, h.HandleMessage)
 }
 
-func (h *GroupHandler) HandleMessage(message *core.Message) {
+func (h *GroupHandler) HandleMessage(message *core.BusMessage) {
 	text := message.Payload.Text
 
 	switch {
 	case strings.Contains(text, "!weather"):
 		weatherReport := weather.GetReport()
 
-		reply := &core.Message{
+		reply := &core.BusMessage{
 			ChannelID: h.ChannelID,
 			Payload: core.ContentStructure{
 				Kind: "message",
-				Text: core.CreateContent(weatherReport, "message"),
+				Text: core.SerializeContent(weatherReport, "message"),
 			},
 		}
 

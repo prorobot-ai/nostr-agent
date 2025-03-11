@@ -4,8 +4,8 @@ import "agent/core"
 
 // **BotProgram** defines a contract for all bot programs
 type BotProgram interface {
-	Run(bot Bot, message *core.Message) string
-	ShouldRun(message *core.Message) bool
+	Run(bot Bot, message *core.BusMessage) string
+	ShouldRun(message *core.BusMessage) bool
 	IsActive() bool
 }
 
@@ -15,5 +15,5 @@ type Bot interface {
 	GetAliases() []string
 	GetPublicKey() string
 	GetNextReceiver(p *ChatterProgram) string
-	Publish(message *core.Message)
+	Publish(message *core.BusMessage)
 }

@@ -6,7 +6,7 @@ type ContentStructure struct {
 	Metadata string `json:"metadata,omitempty"`
 }
 
-type Message struct {
+type BusMessage struct {
 	ReceiverPublicKey string           `json:"receiver_pub_key,omitempty"`
 	SenderPublicKey   string           `json:"sender_pub_key,omitempty"`
 	ChannelID         string           `json:"channel_id,omitempty"` // For group/channel messages

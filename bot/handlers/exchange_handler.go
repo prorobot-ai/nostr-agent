@@ -30,7 +30,7 @@ func (h *ExchangeHandler) Subscribe(eventBus *bot.EventBus) {
 }
 
 // 🔄 Forward messages to bot for processing
-func (h *ExchangeHandler) HandleMessage(message *core.Message) {
+func (h *ExchangeHandler) HandleMessage(message *core.BusMessage) {
 	log.Printf("📩 [%s] Handling Message: %s", h.Bot.Config.Name, message.Payload) // ✅ Log every message received
 
 	// if strings.Contains(message.Content, "🧮") {

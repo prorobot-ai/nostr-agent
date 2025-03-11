@@ -70,7 +70,7 @@ func (listener *GroupListener) ProcessEvent(b *bot.BaseBot, event *nostr.Event) 
 		return
 	}
 
-	b.EventBus.Publish(core.GroupMessageEvent, &core.Message{
+	b.EventBus.Publish(core.GroupMessageEvent, &core.BusMessage{
 		ChannelID:         listener.ChannelID,
 		ReceiverPublicKey: b.PublicKey,
 		SenderPublicKey:   event.PubKey,

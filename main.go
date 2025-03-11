@@ -79,7 +79,7 @@ func startDynamicBot(config core.BotConfig, manager *bot.BotManager) {
 
 	handler.Subscribe(eventBus)
 
-	eventBus.Subscribe(getEventType(config.EventType), func(message *core.Message) {
+	eventBus.Subscribe(getEventType(config.EventType), func(message *core.BusMessage) {
 		if err := publisher.Broadcast(bot, message); err != nil {
 			log.Printf("❌ [%s] Failed to broadcast message: %v", config.Name, err)
 		}

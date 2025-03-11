@@ -85,7 +85,7 @@ func (listener *DMListener) ProcessEvent(b *bot.BaseBot, event *nostr.Event) {
 	log.Printf("💬 [DM from %s]: %s", npub, message.Text)
 
 	// 📩 Pass the event to EventBus
-	b.EventBus.Publish(core.DMMessageEvent, &core.Message{
+	b.EventBus.Publish(core.DMMessageEvent, &core.BusMessage{
 		ReceiverPublicKey: event.PubKey,
 		Payload:           message,
 	})

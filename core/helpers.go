@@ -7,7 +7,7 @@ import (
 )
 
 // 🛠️ Convert structured content to JSON string
-func CreateContent(text string, kind string) string {
+func SerializeContent(text string, kind string) string {
 	message := ContentStructure{
 		Text: text,
 		Kind: kind,

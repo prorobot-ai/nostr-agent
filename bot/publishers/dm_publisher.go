@@ -14,7 +14,7 @@ import (
 type DMPublisher struct{}
 
 // Publish sends an encrypted direct message to the receiver
-func (publisher *DMPublisher) Broadcast(b *bot.BaseBot, message *core.Message) error {
+func (publisher *DMPublisher) Broadcast(b *bot.BaseBot, message *core.BusMessage) error {
 	receiverPubKey := message.ReceiverPublicKey
 
 	sk := b.SecretKey

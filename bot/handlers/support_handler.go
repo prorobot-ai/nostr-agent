@@ -19,41 +19,42 @@ func (h *SupportHandler) Subscribe(eventBus *bot.EventBus) {
 	h.EventBus.Subscribe(core.DMMessageEvent, h.HandleMessage)
 }
 
-func (h *SupportHandler) HandleMessage(message *core.Message) {
+func (h *SupportHandler) HandleMessage(message *core.BusMessage) {
 	text := message.Payload.Text
 
 	switch {
 	case strings.Contains(text, "!ping"):
-		reply := &core.Message{
+		reply := &core.BusMessage{
 			ReceiverPublicKey: message.ReceiverPublicKey,
 			Payload: core.ContentStructure{
 				Kind: "message",
-				Text: "🏓 Pong! I'm alive.",
+				Text: core.SerializeContent("🏓 Pong! I'm alive.", "message"),
 			},
 		}
 		time.Sleep(time.Second)
 		h.EventBus.Publish(core.DMResponseEvent, reply)
 
 	case strings.Contains(text, "I'm online."):
-		reply := &core.Message{
+		reply := &core.BusMessage{
 			ReceiverPublicKey: message.ReceiverPublicKey,
 			Payload: core.ContentStructure{
 				Kind: "message",
-				Text: "👋 Welcome to Dispatch! Let us know if you need any assistance.",
+				Text: core.SerializeContent("👋 Welcome to Dispatch! Let us know if you need any assistance.", "message"),
 			},
 		}
 		time.Sleep(time.Second)
 		h.EventBus.Publish(core.DMResponseEvent, reply)
 
 	case strings.Contains(text, "Hi, I would like to report "):
-		reply := &core.Message{
+
+		reply := &core.BusMessage{
 			ReceiverPublicKey: message.ReceiverPublicKey,
 			Payload: core.ContentStructure{
 				Kind: "message",
-				Text: fmt.Sprintf(
-					"Could you elaborate on the problem you're encountering with %s? Additional details would greatly assist in resolving your issue. In the meanwhile, feel free to mute the user if that's necessary.",
-					h.ExtractUsername(text),
-				),
+				Text: core.SerializeContent(
+					fmt.Sprintf(
+						"Could you elaborate on the problem you're encountering with %s? Additional details would greatly assist in resolving your issue. In the meanwhile, feel free to mute the user if that's necessary.",
+						h.ExtractUsername(text)), "message"),
 			},
 		}
 		time.Sleep(time.Second)

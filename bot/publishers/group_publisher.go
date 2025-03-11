@@ -15,7 +15,7 @@ type GroupPublisher struct {
 	Handler   *handlers.GroupHandler
 }
 
-func (publisher *GroupPublisher) Broadcast(b *bot.BaseBot, message *core.Message) error {
+func (publisher *GroupPublisher) Broadcast(b *bot.BaseBot, message *core.BusMessage) error {
 
 	text := message.Payload.Text
 
