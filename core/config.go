@@ -31,6 +31,7 @@ type ProgramConfig struct {
 	ResponseDelay int          `yaml:"response_delay"`
 	WorkerConfig  WorkerConfig `yaml:"worker"`
 	HubConfig     HubConfig    `yaml:"hub"`
+	Pattern       string       `yaml:"pattern"`
 	CallbackUrl   string       `yaml:"callback_url"`
 }
 

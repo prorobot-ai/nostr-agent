@@ -62,6 +62,12 @@ func (m *BotManager) InitializePrograms(bot *BaseBot) {
 
 		conductor.InitCrawlerClient(bot.Config.ProgramConfig.WorkerConfig.Address)
 		buffer = append(buffer, conductor)
+	} else if bot.Config.Name == "Telegram" {
+		log.Printf("🔌 Attaching [CallbackProgram] to [%s] ✅", bot.Config.Name)
+		buffer = append(buffer, &programs.CallbackProgram{
+			ProgramConfig: bot.Config.ProgramConfig,
+			Peers:         filterPeers(allPeers, bot.PublicKey),
+		})
 	}
 
 	bot.AssignPrograms(buffer)
