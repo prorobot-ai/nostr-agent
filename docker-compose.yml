@@ -48,3 +48,15 @@ services:
     command: ["--config=configs/hype.yaml"]
     volumes:
       - ./logs/bot:/app/logs
+
+  pattern:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pattern-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ["--config=configs/pattern_bot.yaml"]
+    volumes:
+      - ./logs/bot:/app/logs
